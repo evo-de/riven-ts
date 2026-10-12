@@ -14,7 +14,7 @@ const meta = preview.meta({
     NowPlayingSkeleton,
   },
   args: {
-    autoplayDelay: 5000,
+    autoplayDelay: 30_000,
     data: [
       {
         id: "603692",
@@ -44,7 +44,8 @@ const meta = preview.meta({
             url: "https://www.rottentomatoes.com/m/john_wick_chapter_4",
           },
         },
-        logoUrl: null,
+        logo: null,
+        status: "released",
       },
       {
         id: "94605",
@@ -63,7 +64,8 @@ const meta = preview.meta({
         ],
         certification: "12A",
         ratings: {},
-        logoUrl: null,
+        logo: null,
+        status: "released",
       },
       {
         id: "1291595",
@@ -79,14 +81,10 @@ const meta = preview.meta({
         genres: [{ id: "horror", name: "Horror" }],
         certification: "18",
         ratings: {},
-        logoUrl: null,
+        logo: null,
+        status: "released",
       },
     ] satisfies IndexerData[],
-  },
-  parameters: {
-    snapshot: {
-      delay: 2500, // Half way between autoplay transitions to prevent taking screenshots mid-switch
-    },
   },
 });
 
@@ -166,6 +164,11 @@ Default.test(
     args: {
       autoplayDelay: 1000,
     },
+    parameters: {
+      snapshot: {
+        enabled: false,
+      },
+    },
   },
   async ({ args, canvas, userEvent, step }) => {
     const carousel = await canvas.findByRole("region", {
@@ -208,9 +211,13 @@ Default.test(
 Default.test(
   "Autoplays the carousel when not hovered",
   {
-    tags: ["!snapshot"],
     args: {
       autoplayDelay: 1000,
+    },
+    parameters: {
+      snapshot: {
+        enabled: false,
+      },
     },
   },
   async ({ args, canvas, step }) => {
@@ -239,6 +246,11 @@ Default.test(
   {
     args: {
       autoplayDelay: 5000,
+    },
+    parameters: {
+      snapshot: {
+        enabled: false,
+      },
     },
   },
   async ({ args, canvas, userEvent, step }) => {
@@ -313,7 +325,8 @@ export const WithLongTitle = meta.story({
         ],
         certification: "R",
         ratings: {},
-        logoUrl: null,
+        logo: null,
+        status: "released",
       },
       {
         id: "1291593",
@@ -334,7 +347,8 @@ export const WithLongTitle = meta.story({
         ],
         certification: "R",
         ratings: {},
-        logoUrl: null,
+        logo: null,
+        status: "released",
       },
       {
         id: "1291595",
@@ -350,7 +364,8 @@ export const WithLongTitle = meta.story({
         genres: [{ id: "horror", name: "Horror" }],
         certification: "18",
         ratings: {},
-        logoUrl: null,
+        logo: null,
+        status: "released",
       },
     ],
   },
@@ -387,8 +402,13 @@ export const WithLogos = meta.story({
             url: "https://www.rottentomatoes.com/m/john_wick_chapter_4",
           },
         },
-        logoUrl:
-          "https://image.tmdb.org/t/p/original/24dIhRKjLnYRanA2Mo0ycZfObUp.png",
+        logo: {
+          url: "https://image.tmdb.org/t/p/original/24dIhRKjLnYRanA2Mo0ycZfObUp.png",
+          aspectRatio: 1.5,
+          height: 200,
+          width: 300,
+        },
+        status: "released",
       },
       {
         id: "94605",
@@ -407,8 +427,13 @@ export const WithLogos = meta.story({
         ],
         certification: "12A",
         ratings: {},
-        logoUrl:
-          "https://image.tmdb.org/t/p/original/jXLNOzeEA8AoJy92dJTUUZXTMxK.png",
+        logo: {
+          url: "https://image.tmdb.org/t/p/original/jXLNOzeEA8AoJy92dJTUUZXTMxK.png",
+          aspectRatio: 1.5,
+          height: 200,
+          width: 300,
+        },
+        status: "released",
       },
       {
         id: "1291595",
@@ -424,8 +449,13 @@ export const WithLogos = meta.story({
         genres: [{ id: "horror", name: "Horror" }],
         certification: "18",
         ratings: {},
-        logoUrl:
-          "https://image.tmdb.org/t/p/original/iGjbP4jYzzbINDtd9kScypQOlmw.png",
+        logo: {
+          url: "https://image.tmdb.org/t/p/original/iGjbP4jYzzbINDtd9kScypQOlmw.png",
+          aspectRatio: 1.5,
+          height: 200,
+          width: 300,
+        },
+        status: "released",
       },
     ],
   },

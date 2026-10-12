@@ -1,5 +1,6 @@
 import { PluginDataSource } from "@repo/util-plugin-sdk";
-import { DateTime } from "@repo/util-plugin-sdk/helpers/dates";
+import { IndexerDataStatus } from "@repo/util-plugin-sdk/dto/enums/indexer-data-status.enum";
+import { DateTime, Duration } from "@repo/util-plugin-sdk/helpers/dates";
 
 import { Arg, ID, Query, Resolver } from "type-graphql";
 
@@ -8,6 +9,8 @@ import { pluginConfig } from "../tmdb-plugin.config.ts";
 import { formatImageUrl } from "../utilities/format-image-url.ts";
 import { TmdbTrendingMoviesTimeWindow } from "./enums/trending-time-window.enum.ts";
 import { TmdbIndexerData } from "./types/tmdb-indexer-data.type.ts";
+
+import type { ProductionCompany } from "@repo/util-plugin-sdk/dto/types/production-company.type";
 
 @Resolver()
 export class TmdbResolver {
@@ -40,6 +43,27 @@ export class TmdbResolver {
         : null,
       backdropUrl: formatImageUrl(item.backdrop_path, "backdrop"),
       type: "movie",
+      rawRuntime: item.runtime
+        ? Duration.fromObject({ minutes: item.runtime })
+        : null,
+      status: IndexerDataStatus.parse(item.status),
+      imdbId: item.imdb_id ?? null,
+      budget: item.budget ?? null,
+      revenue: item.revenue ?? null,
+      homepage: item.homepage ?? null,
+      spokenLanguages:
+        item.spoken_languages?.map((language) => ({
+          englishName: language.english_name ?? "",
+          iso6391Code: language.iso_639_1 ?? "",
+          name: language.name ?? "",
+        })) ?? null,
+      productionCompanies:
+        item.production_companies?.map<ProductionCompany>((company) => ({
+          id: company.id?.toString() ?? "",
+          name: company.name ?? "",
+          logoPath: formatImageUrl(company.logo_path, "logo") ?? null,
+          originCountry: company.origin_country ?? "",
+        })) ?? null,
     };
   }
 
@@ -73,6 +97,8 @@ export class TmdbResolver {
         releaseDate: movie.release_date
           ? DateTime.fromISO(movie.release_date).toJSDate()
           : null,
+        rawRuntime: null,
+        status: "unknown",
       });
     }
 
@@ -112,6 +138,8 @@ export class TmdbResolver {
         releaseDate: movie.release_date
           ? DateTime.fromISO(movie.release_date).toJSDate()
           : null,
+        rawRuntime: null,
+        status: "unknown",
       });
     }
 

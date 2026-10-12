@@ -24,7 +24,20 @@ import type { CarouselApi } from "#components/_ui/carousel.tsx";
 import type { RefObject } from "react";
 
 export interface NowPlayingProps {
-  data: IndexerData[];
+  data: Pick<
+    IndexerData,
+    | "id"
+    | "title"
+    | "backdropUrl"
+    | "type"
+    | "ratings"
+    | "logo"
+    | "certification"
+    | "language"
+    | "voteAverage"
+    | "overview"
+    | "genres"
+  >[];
   autoplayDelay?: number;
   alignment?: "left" | "center" | "right";
   heightClass?: string;
@@ -148,10 +161,13 @@ export function NowPlaying({
                         animationClass,
                       )}
                     >
-                      {item.logoUrl ? (
-                        <div className="mb-4 relative w-full h-[10vw] max-h-35 max-w-125">
+                      {item.logo ? (
+                        <div
+                          className="mb-4 relative w-full h-[10vw] max-h-35 max-w-125 flex"
+                          style={{ aspectRatio: item.logo.aspectRatio }}
+                        >
                           <Image
-                            src={item.logoUrl}
+                            src={item.logo.url}
                             alt={item.title}
                             className={cn(
                               "max-h-full max-w-[80%] drop-shadow-2xl object-contain",
@@ -159,7 +175,8 @@ export function NowPlaying({
                               alignment === "right" && "object-bottom-right",
                               alignment === "center" && "object-bottom",
                             )}
-                            fill
+                            height={item.logo.height}
+                            width={item.logo.width}
                           />
                         </div>
                       ) : (
