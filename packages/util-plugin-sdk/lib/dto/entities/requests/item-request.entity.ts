@@ -14,6 +14,7 @@ import { Field, ID, ObjectType } from "type-graphql";
 import { DateTime } from "../../../helpers/dates.ts";
 import { ItemRequestState } from "../../enums/item-request-state.enum.ts";
 import { ItemRequestType } from "../../enums/item-request-type.enum.ts";
+import { MediaItemUnion } from "../../unions/media-item.union.ts";
 import { MediaItem } from "../media-items/media-item.entity.ts";
 import { Season } from "../media-items/season.entity.ts";
 
@@ -115,18 +116,20 @@ export class ItemRequest {
   @Property({ default: false })
   public isPartialRequest!: Opt<boolean>;
 
-  @Field(() => String)
   public async getMediaItemTitle() {
+    const primaryMediaItem = await this.primaryMediaItem();
+
+    return primaryMediaItem?.fullTitle ?? "Unknown Title";
+  }
+
+  @Field(() => MediaItemUnion, { nullable: true })
+  public async primaryMediaItem() {
     const [mediaItem] = await this.mediaItems.matching({
       where: {
         type: this.type,
       },
     });
 
-    if (!mediaItem) {
-      return "Unknown Title";
-    }
-
-    return mediaItem.fullTitle;
+    return mediaItem ?? null;
   }
 }
