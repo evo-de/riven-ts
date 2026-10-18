@@ -14,7 +14,7 @@ export const GET_TVDB_TRENDING_SHOWS: TypedDocumentNode<
     tvdbTrendingShows(timeWindow: $timeWindow) {
       id
       title
-      posterPath
+      posterUrl
       type
       year
     }
