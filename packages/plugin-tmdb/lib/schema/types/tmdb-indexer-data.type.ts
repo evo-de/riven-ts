@@ -9,10 +9,26 @@ import type { ProductionCompany } from "@repo/util-plugin-sdk/dto/types/producti
 import type { SpokenLanguage } from "@repo/util-plugin-sdk/dto/types/spoken-language.type";
 import type { Duration } from "@repo/util-plugin-sdk/helpers/dates";
 
+/**
+ * A movie or show from TMDB.
+ *
+ * The `id` is the ID Riven uses to request the item:
+ * - Movies: the TMDB ID
+ * - Shows: the TVDB ID, or a namespaced TMDB ID (`tmdb-<id>`) when TMDB has no TVDB ID.
+ *   These shows are surfaced for visibility, but are not requestable.
+ *
+ * TMDB lookups must always use {@link TmdbIndexerData.tmdbId}.
+ */
 @ObjectType({ implements: IndexerData })
 export class TmdbIndexerData implements Omit<IndexerData, "runtime" | "year"> {
   @Field(() => ID)
   public id!: string;
+
+  @Field(() => ID)
+  public tmdbId!: string;
+
+  @Field(() => ID, { nullable: true })
+  public tvdbId?: string | null;
 
   @Field()
   public title!: string;
@@ -45,6 +61,8 @@ export class TmdbIndexerData implements Omit<IndexerData, "runtime" | "year"> {
   public certification?: string | null;
 
   public type!: Extract<MediaItemType, "movie" | "show">;
+
+  public isRequestable!: boolean;
 
   public imdbId?: string | null;
 

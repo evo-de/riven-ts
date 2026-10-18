@@ -10,12 +10,19 @@ import { useCardSelection } from "#components/providers/card-selection-provider.
 
 import type { IndexerData } from "#app/_types/__generated__/graphql.ts";
 import type { LinkProps } from "next/link";
+import type { SetOptional } from "type-fest";
 
 interface ListItemProps extends Pick<
   React.HTMLAttributes<HTMLDivElement>,
   "className"
 > {
-  mediaItem: Pick<IndexerData, "id" | "title" | "posterUrl" | "type" | "year">;
+  mediaItem: SetOptional<
+    Pick<
+      IndexerData,
+      "id" | "title" | "posterUrl" | "type" | "year" | "isRequestable"
+    >,
+    "isRequestable"
+  >;
   badge?: {
     text: string;
     variant: string;
@@ -24,6 +31,11 @@ interface ListItemProps extends Pick<
   isSelectable?: boolean;
   href?: LinkProps<`/details/media/${string}/${string}`>["href"];
 }
+
+const notRequestableBadge = {
+  text: "Not requestable",
+  variant: "default",
+} as const satisfies ListItemProps["badge"];
 
 export function ListItem({
   className,
@@ -34,6 +46,11 @@ export function ListItem({
   href,
 }: ListItemProps) {
   const cardSelectionContext = useCardSelection();
+
+  // Items that can't be requested (e.g. shows without a TVDB ID) have no details page to link to
+  const isRequestable = mediaItem.isRequestable !== false;
+  const resolvedBadge =
+    badge ?? (isRequestable ? undefined : notRequestableBadge);
 
   if (isSelectable && !cardSelectionContext) {
     throw new Error(
@@ -99,15 +116,15 @@ export function ListItem({
             },
           })}
         topRight={
-          badge && (
+          resolvedBadge && (
             <Badge
               className={cn(
                 "border-white/10 px-2 py-0.5 text-[10px] shadow-sm backdrop-blur-md",
-                badgeVariantClasses[badge.variant] ??
+                badgeVariantClasses[resolvedBadge.variant] ??
                   badgeVariantClasses["default"],
               )}
             >
-              {badge.text}
+              {resolvedBadge.text}
             </Badge>
           )
         }
@@ -115,7 +132,7 @@ export function ListItem({
     );
   }
 
-  if (href) {
+  if (href && isRequestable) {
     return (
       <Link href={href} className={containerClasses}>
         {renderCardContent()}
