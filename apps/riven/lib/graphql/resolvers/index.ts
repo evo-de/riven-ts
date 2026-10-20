@@ -1,6 +1,8 @@
 import { EpisodeResolver } from "./episode.resolver.ts";
 import { FileSystemEntryResolver } from "./filesystem-entry/filesystem-entry.resolver.ts";
 import { IndexerDataResolver } from "./indexer-data.resolver.ts";
+import { IndexerEpisodeResolver } from "./indexer-episode.resolver.ts";
+import { IndexerSeasonResolver } from "./indexer-season.resolver.ts";
 import { ItemRequestResolver } from "./item-request/item-request.resolver.ts";
 import { MediaEntryResolver } from "./media-entry.resolver.ts";
 import { MediaItemResolver } from "./media-item.resolver.ts";
@@ -23,5 +25,7 @@ export const resolvers = [
   ShowResolver,
   VfsResolver,
   IndexerDataResolver,
+  IndexerSeasonResolver,
+  IndexerEpisodeResolver,
   TempFrontendResolver,
 ] as const;

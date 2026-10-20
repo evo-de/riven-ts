@@ -3,6 +3,7 @@ import {
   MediaItem,
   Movie,
   Season,
+  Show,
 } from "@repo/util-plugin-sdk/dto/entities";
 
 import {
@@ -20,7 +21,13 @@ import { resetMediaItem } from "./utilities/reset-media-item.ts";
 import type { FindOneOrFailOptions } from "@mikro-orm/core";
 import type { MediaItemState } from "@repo/util-plugin-sdk/dto/enums/media-item-state.enum";
 import type { MediaItemType } from "@repo/util-plugin-sdk/dto/enums/media-item-type.enum";
+import type { TopLevelMediaItemType } from "@repo/util-plugin-sdk/dto/enums/top-level-media-item-type.enum";
 import type { UUID } from "node:crypto";
+
+interface EpisodePosition {
+  seasonNumber: number;
+  episodeNumber: number;
+}
 
 export class MediaItemService extends BaseService {
   readonly #rootItemTypes = new Set<MediaItemType>([
@@ -68,6 +75,45 @@ export class MediaItemService extends BaseService {
     options?: FindOneOrFailOptions<MediaItem, Hint, Fields, Excludes>,
   ) {
     return this.em.getRepository(MediaItem).findOneOrFail(id, options);
+  }
+
+  /**
+   * Finds a root media item by the external ID Riven uses to request it:
+   * the TMDB ID for movies, and the TVDB ID for shows.
+   */
+  @CreateRequestContext()
+  public async getMediaItemByExternalId(
+    externalId: string,
+    type: TopLevelMediaItemType,
+  ) {
+    switch (type) {
+      case "movie": {
+        return this.em.getRepository(Movie).findOne({ tmdbId: externalId });
+      }
+      case "show": {
+        return this.em.getRepository(Show).findOne({ tvdbId: externalId });
+      }
+    }
+  }
+
+  @CreateRequestContext()
+  public async getSeasonByShowTvdbId(showTvdbId: string, seasonNumber: number) {
+    return this.em.getRepository(Season).findOne({
+      tvdbId: showTvdbId,
+      number: seasonNumber,
+    });
+  }
+
+  @CreateRequestContext()
+  public async getEpisodeByShowTvdbId(
+    showTvdbId: string,
+    { seasonNumber, episodeNumber }: EpisodePosition,
+  ) {
+    return this.em.getRepository(Episode).findOne({
+      tvdbId: showTvdbId,
+      number: episodeNumber,
+      season: { number: seasonNumber },
+    });
   }
 
   @CreateRequestContext()
