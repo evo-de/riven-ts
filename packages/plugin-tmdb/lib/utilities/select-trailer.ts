@@ -1,12 +1,11 @@
-import type { MediaVideos } from "../schemas/media-videos.schema.ts";
+import type { MediaVideo } from "../schemas/media-video.schema.ts";
 import type { Trailer } from "@repo/util-plugin-sdk/dto/types/trailer.type";
-import type z from "zod";
 
 /**
  * Selects the highest resolution official trailer in the requested language.
  */
 export function selectTrailer(
-  videos: z.infer<typeof MediaVideos>["results"],
+  videos: MediaVideo[],
   language: string,
 ): Trailer | null {
   const { language: iso_639_1 } = new Intl.Locale(language);

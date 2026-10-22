@@ -1,11 +1,10 @@
+import { UUID } from "@repo/util-plugin-sdk/schemas/utilities/uuid.schema";
+
 import { DateTime, Settings } from "luxon";
 import { expect, within } from "storybook/test";
 
 import { preview } from "#.storybook/preview.tsx";
-
-import { Calendar } from "./calendar.tsx";
-
-import type { UUID } from "node:crypto";
+import { Calendar } from "#components/calendar/calendar/calendar.tsx";
 
 const meta = preview.meta({
   title: "Calendar / Calendar",
@@ -13,7 +12,7 @@ const meta = preview.meta({
   args: {
     items: [
       {
-        itemId: "1" as UUID,
+        itemId: UUID.parse(crypto.randomUUID()),
         tvdbId: "1",
         tmdbId: "94605",
         showTitle: "Arcane",
@@ -24,7 +23,7 @@ const meta = preview.meta({
         lastState: "Completed",
       },
       {
-        itemId: "2" as UUID,
+        itemId: UUID.parse(crypto.randomUUID()),
         tvdbId: "2",
         tmdbId: "603692",
         showTitle: "John Wick: Chapter 4",
@@ -33,7 +32,7 @@ const meta = preview.meta({
         lastState: "Completed",
       },
       {
-        itemId: "3" as UUID,
+        itemId: UUID.parse(crypto.randomUUID()),
         tvdbId: "3",
         tmdbId: "1399",
         showTitle: "Game of Thrones",

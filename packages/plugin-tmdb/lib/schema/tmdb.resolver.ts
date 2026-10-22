@@ -10,6 +10,7 @@ import { pluginConfig } from "../tmdb-plugin.config.ts";
 import { createTmdbMovie } from "../utilities/create-tmdb-indexer-data.ts";
 import { formatImageUrl } from "../utilities/format-image-url.ts";
 import { parseTmdbDate } from "../utilities/parse-tmdb-date.ts";
+import { movieListItemToTmdbMovie } from "../utilities/to-tmdb-movie.ts";
 import {
   showDetailsToTmdbShow,
   showListItemsToTmdbShows,
@@ -18,6 +19,7 @@ import { TmdbTrendingTimeWindow } from "./enums/trending-time-window.enum.ts";
 import { TmdbIndexerData } from "./types/tmdb-indexer-data.type.ts";
 
 import type { ProductionCompany } from "@repo/util-plugin-sdk/dto/types/production-company.type";
+import type { SpokenLanguage } from "@repo/util-plugin-sdk/dto/types/spoken-language.type";
 
 @Resolver()
 export class TmdbResolver {
@@ -56,26 +58,11 @@ export class TmdbResolver {
     const mappedData = new Map<string, TmdbIndexerData>();
 
     for (const movie of nowPlaying.results) {
-      if (!movie.id || !movie.title || !movie.overview) {
-        continue;
-      }
+      const item = movie.overview ? movieListItemToTmdbMovie(movie) : null;
 
-      mappedData.set(
-        movie.id.toString(),
-        createTmdbMovie({
-          id: movie.id.toString(),
-          title: movie.title,
-          overview: movie.overview,
-          backdropUrl: formatImageUrl(movie.backdrop_path, "backdrop"),
-          posterUrl: formatImageUrl(movie.poster_path, "poster"),
-          genres: [],
-          genreIds: movie.genre_ids ?? [],
-          language: movie.original_language ?? null,
-          releaseDate: parseTmdbDate(movie.release_date),
-          rawRuntime: null,
-          status: "unknown",
-        }),
-      );
+      if (item) {
+        mappedData.set(item.id, item);
+      }
     }
 
     return [...mappedData.values()];
@@ -99,26 +86,11 @@ export class TmdbResolver {
     const mappedData = new Map<string, TmdbIndexerData>();
 
     for (const movie of trendingMovies.results) {
-      if (!movie.id || !movie.title || !movie.overview) {
-        continue;
-      }
+      const item = movie.overview ? movieListItemToTmdbMovie(movie) : null;
 
-      mappedData.set(
-        movie.id.toString(),
-        createTmdbMovie({
-          id: movie.id.toString(),
-          title: movie.title,
-          overview: movie.overview,
-          backdropUrl: formatImageUrl(movie.backdrop_path, "backdrop"),
-          posterUrl: formatImageUrl(movie.poster_path, "poster"),
-          genres: [],
-          genreIds: movie.genre_ids ?? [],
-          language: movie.original_language ?? null,
-          releaseDate: parseTmdbDate(movie.release_date),
-          rawRuntime: null,
-          status: "unknown",
-        }),
-      );
+      if (item) {
+        mappedData.set(item.id, item);
+      }
     }
 
     return [...mappedData.values()];
@@ -166,7 +138,7 @@ export class TmdbResolver {
       revenue: item.revenue ?? null,
       homepage: item.homepage ?? null,
       spokenLanguages:
-        item.spoken_languages?.map((language) => ({
+        item.spoken_languages?.map<SpokenLanguage>((language) => ({
           englishName: language.english_name ?? "",
           iso6391Code: language.iso_639_1 ?? "",
           name: language.name ?? "",

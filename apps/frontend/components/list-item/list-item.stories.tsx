@@ -3,9 +3,8 @@ import { ListChecks, Loader2, Trash } from "lucide-react";
 import { expect, fn } from "storybook/test";
 
 import preview from "#.storybook/preview.tsx";
+import { ListItem } from "#components/list-item/list-item.tsx";
 import { CardSelectionProvider } from "#components/providers/card-selection-provider.tsx";
-
-import { ListItem } from "./list-item.tsx";
 
 const meta = preview.meta({
   title: "Components / List Item",
@@ -49,7 +48,6 @@ export const Default = meta.story({
       type: "movie",
       year: 1999,
     },
-    indexer: "tmdb",
   },
 });
 

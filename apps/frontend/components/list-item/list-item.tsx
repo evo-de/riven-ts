@@ -27,7 +27,6 @@ interface ListItemProps extends Pick<
     text: string;
     variant: string;
   };
-  indexer: string | undefined;
   isSelectable?: boolean;
   href?: LinkProps<`/details/media/${string}/${string}`>["href"];
 }
@@ -37,10 +36,13 @@ const notRequestableBadge = {
   variant: "default",
 } as const satisfies ListItemProps["badge"];
 
+/**
+ * Poster card for a media item, linking to its details page. Can be selected
+ * when inside `CardSelectionProvider`.
+ */
 export function ListItem({
   className,
   badge,
-  indexer,
   mediaItem,
   isSelectable = false,
   href,
@@ -60,15 +62,12 @@ export function ListItem({
 
   // Normalize type for different indexers
   const normalisedType = useMemo(() => {
-    if (
-      (indexer === "tvdb" || indexer === "tmdb") &&
-      mediaItem.type === "show"
-    ) {
+    if (mediaItem.type === "show") {
       return "tv";
     }
 
     return mediaItem.type;
-  }, [mediaItem.type, indexer]);
+  }, [mediaItem.type]);
 
   const subtitle = useMemo(() => {
     const parts = [];

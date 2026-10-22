@@ -38,6 +38,10 @@ interface LibraryPageProps {
   totalItems: number;
 }
 
+/**
+ * Library route listing the user's media items, with search, type and state
+ * filters.
+ */
 export function LibraryPage({ items, totalItems }: LibraryPageProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const { action, form, handleSubmitWithAction } = useHookFormAction(
@@ -195,7 +199,6 @@ export function LibraryPage({ items, totalItems }: LibraryPageProps) {
                       >
                         <ListItem
                           mediaItem={item}
-                          indexer=""
                           isSelectable
                           className="aspect-2/3 w-full"
                           {...(i % 2 === 0

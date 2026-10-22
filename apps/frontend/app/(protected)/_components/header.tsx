@@ -20,6 +20,10 @@ interface HeaderProps {
   modifierKey: "⌘" | "⌃";
 }
 
+/**
+ * Top bar with the global search input (focused with ⌘/Ctrl+K) that navigates
+ * to the explore page.
+ */
 export function Header({ modifierKey }: HeaderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -65,23 +69,12 @@ export function Header({ modifierKey }: HeaderProps) {
       urlQuery !== form.getValues("query") &&
       inputRef.current !== document.activeElement
     ) {
-      form.setValue("query", urlQuery);
+      form.reset({ query: urlQuery });
     }
   }, [searchParams, form]);
 
   function navigateToSearch(query: string) {
-    // Read directly from local state
     const isExplorePage = pathname === "/explore";
-
-    // Client-first search: Immediately update store if we're on the explore page
-    // This avoids waiting for the server round-trip (goto -> load -> data -> effect)
-    // and fixes reactivity issues when typing quickly.
-
-    // if (isExplorePage) {
-    //   const parsed = parseSearchQuery(query);
-    //   searchStore.syncQuery(parsed);
-    // }
-
     const navigationType: RedirectType = isExplorePage ? "replace" : "push";
     const navigationUrl =
       `/explore?query=${encodeURIComponent(query)}` as const;
