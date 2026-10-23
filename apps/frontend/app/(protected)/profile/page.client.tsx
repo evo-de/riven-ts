@@ -20,9 +20,10 @@ import { PasswordChangeForm } from "#components/auth/password-change-form/passwo
 import { SetPasswordForm } from "#components/auth/set-password-form/set-password-form.tsx";
 import { UpdateProfileForm } from "#components/auth/update-profile-form/update-profile-form.tsx";
 import { UserManagement } from "#components/auth/user-management/user-management.tsx";
-import { PageShell } from "#components/page-shell/page-shell.tsx";
 import { authClient } from "#lib/auth/client.ts";
 import { getInitials } from "#lib/utils.ts";
+
+import { DeleteAccountButton } from "./_components/delete-account-confirmation-dialog/delete-account-confirmation-dialog";
 
 import type { User } from "#lib/auth/client.ts";
 
@@ -53,18 +54,8 @@ export function ProfilePage({
     });
   }
 
-  async function handleDeleteAccount() {
-    await authClient.deleteUser({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/login");
-        },
-      },
-    });
-  }
-
   return (
-    <PageShell className="mx-auto w-full max-w-5xl">
+    <>
       <section className="border-border/60 flex flex-col gap-5 border-b pb-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-start gap-4">
           <Avatar className="h-16 w-16 text-xl">
@@ -123,16 +114,7 @@ export function ProfilePage({
             Logout
           </Button>
 
-          <Button
-            variant="destructive"
-            className="w-full sm:w-auto"
-            onClick={() => {
-              void handleDeleteAccount();
-            }}
-            type="button"
-          >
-            Delete Account
-          </Button>
+          <DeleteAccountButton />
         </div>
       </section>
 
@@ -161,6 +143,6 @@ export function ProfilePage({
       <PasskeyFormProvider>
         <Passkeys />
       </PasskeyFormProvider>
-    </PageShell>
+    </>
   );
 }

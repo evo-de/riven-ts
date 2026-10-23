@@ -12,6 +12,10 @@ export const ItemPermission = z.enum([
   "scrape",
 ]);
 
+export const UserPermission = z.enum([...defaultStatements.user]);
+
+export const SessionPermission = z.enum([...defaultStatements.session]);
+
 const statement = {
   ...defaultStatements,
   item: ItemPermission.options,
@@ -25,10 +29,14 @@ export const admin = ac.newRole({
 });
 
 export const user = ac.newRole({
+  session: [],
+  user: ["set-email", "set-password"],
   item: [ItemPermission.enum.request],
 });
 
 export const manager = ac.newRole({
+  session: [],
+  user: ["set-email", "set-password"],
   item: ItemPermission.options,
 });
 
