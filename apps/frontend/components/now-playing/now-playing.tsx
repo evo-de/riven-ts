@@ -37,6 +37,7 @@ export interface NowPlayingProps {
     | "voteAverage"
     | "overview"
     | "genres"
+    | "seasonLabel"
   >[];
   autoplayDelay?: number;
   alignment?: "left" | "center" | "right";
@@ -206,12 +207,14 @@ export function NowPlaying({
                           </span>
                         </>
                       )}
-                      <span className="text-white/40">|</span>
-                      <span className="text-white drop-shadow-md">
-                        {/* {getSeasonAndYear(
-                            item.releaseDate ?? item.firstAirDate ?? "",
-                          )} */}
-                      </span>
+                      {item.seasonLabel && (
+                        <>
+                          <span className="text-white/40">|</span>
+                          <span className="text-white drop-shadow-md">
+                            {item.seasonLabel}
+                          </span>
+                        </>
+                      )}
                       {item.language && (
                         <>
                           <span className="text-white/40">|</span>
