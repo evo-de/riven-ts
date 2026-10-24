@@ -17,16 +17,34 @@ export default async function ProfilePage() {
     unauthorized();
   }
 
-  const [{ data: canManageUsers }, { data: authProvidersData }] =
-    await Promise.all([
-      authClient.admin.hasPermission({
-        permissions: { user: ["create"] },
-        userId: authData.user.id,
-      }),
-      query({
-        query: GET_AUTH_PROVIDERS,
-      }),
-    ]);
+  const [
+    { data: canManageUsers },
+    { data: canListUsers },
+    { data: accounts },
+    { data: authProvidersData },
+  ] = await Promise.all([
+    authClient.admin.hasPermission({
+      permissions: { user: ["create"] },
+      userId: authData.user.id,
+    }),
+    authClient.admin.hasPermission({
+      permissions: { user: ["list"] },
+      userId: authData.user.id,
+    }),
+    authClient.listAccounts(),
+    query({
+      query: GET_AUTH_PROVIDERS,
+    }),
+  ]);
+
+  const { users } = canListUsers?.success
+    ? await authClient.admin.listUsers({
+        query: {},
+        fetchOptions: {
+          throw: true,
+        },
+      })
+    : { users: [] };
 
   const hasCredentialProvider = Boolean(
     authProvidersData?.authProviders.some(
@@ -34,11 +52,21 @@ export default async function ProfilePage() {
     ),
   );
 
+  const providers = new Map(
+    (authProvidersData?.authProviders ?? []).map((provider) => [
+      provider.key,
+      provider,
+    ]),
+  );
+
   return (
     <ProfilePageClient
       canManageUsers={canManageUsers?.success ?? false}
       hasCredentialProvider={hasCredentialProvider}
       user={authData.user}
+      users={users}
+      accounts={accounts ?? []}
+      providers={Object.fromEntries(providers)}
     />
   );
 }

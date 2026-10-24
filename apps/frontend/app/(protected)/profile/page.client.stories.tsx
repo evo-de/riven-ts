@@ -54,6 +54,8 @@ export const Admin = meta.story({
   args: {
     canManageUsers: true,
     hasCredentialProvider: true,
+    accounts: [],
+    providers: {},
     user: {
       id: "1",
       email: "admin@example.com",
@@ -67,6 +69,51 @@ export const Admin = meta.story({
       banned: false,
       emailVerified: true,
     },
+    users: [
+      {
+        id: "1",
+        name: "Alice Admin",
+        email: "alice@example.com",
+        username: "alice",
+        role: "admin",
+        banned: false,
+        createdAt: DateTime.now().minus({ months: 2, weeks: 1 }).toJSDate(),
+        updatedAt: DateTime.now().minus({ months: 1 }).toJSDate(),
+        emailVerified: true,
+        image: null,
+        displayUsername: "username",
+        banReason: null,
+        banExpires: null,
+      },
+      {
+        id: "2",
+        name: "Bob Viewer",
+        email: "bob@example.com",
+        username: "bob",
+        role: "user",
+        banned: false,
+        createdAt: DateTime.now().minus({ months: 1, weeks: 2 }).toJSDate(),
+        updatedAt: DateTime.now().minus({ months: 1 }).toJSDate(),
+        emailVerified: true,
+        image: null,
+        displayUsername: "username",
+        banReason: null,
+        banExpires: null,
+      },
+      {
+        id: "3",
+        name: "Charlie Manager",
+        email: "charlie@example.com",
+        username: "charlie",
+        role: "manager",
+        banned: false,
+        createdAt: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+        updatedAt: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+        emailVerified: true,
+        image: null,
+        displayUsername: "username",
+      },
+    ],
   },
 });
 
@@ -74,6 +121,8 @@ export const Member = meta.story({
   args: {
     canManageUsers: false,
     hasCredentialProvider: false,
+    accounts: [],
+    providers: {},
     user: {
       id: "1",
       email: "member@example.com",
@@ -87,5 +136,6 @@ export const Member = meta.story({
       banned: false,
       emailVerified: true,
     },
+    users: [],
   },
 });
