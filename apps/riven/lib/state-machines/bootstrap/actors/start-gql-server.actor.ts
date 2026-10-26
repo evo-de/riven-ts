@@ -9,13 +9,16 @@ import { RequestContext } from "@mikro-orm/core";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
+import { useServer } from "graphql-ws/use/ws";
 import { createServer } from "node:http";
 import { URL } from "node:url";
+import { WebSocketServer } from "ws";
 import { fromPromise } from "xstate";
 
 import { initAuth } from "#auth/auth.ts";
 import { initApolloClient } from "#graphql/apollo-client.ts";
 import { buildContextFunction } from "#graphql/build-context-function.ts";
+import { pubSub } from "#graphql/pubsub.ts";
 import { resolvers } from "#graphql/resolvers/index.ts";
 import { logger } from "#utilities/logger/logger.ts";
 import { redisCache } from "#utilities/redis-cache.ts";
@@ -62,11 +65,49 @@ export const startGqlServer = fromPromise<
     app(...args);
   });
 
+  const graphqlPath = "/graphql";
+
+  const wsServer = new WebSocketServer({
+    server: httpServer,
+    path: graphqlPath,
+  });
+
+  const schema = await buildSchema({
+    resolvers: [...resolvers, ...pluginResolvers],
+    pubSub,
+  });
+
+  const sendEvent: MainRunnerMachineIntake = (event) => {
+    mainRunnerRef.send(event);
+  };
+
+  const sendExternalEvent: GraphQLContext["sendEvent"] = (event) => {
+    if (!event.type.startsWith("riven-external.")) {
+      throw new Error(
+        "Only `riven-external.` events can be sent from the GraphQL server",
+      );
+    }
+
+    mainRunnerRef.send(event);
+  };
+
+  const context = buildContextFunction(
+    sendEvent,
+    sendExternalEvent,
+    validPlugins,
+  );
+
+  const serverCleanup = useServer(
+    {
+      schema,
+      context,
+    },
+    wsServer,
+  );
+
   const server = new ApolloServer<ApolloServerContext>({
     cache: redisCache,
-    schema: await buildSchema({
-      resolvers: [...resolvers, ...pluginResolvers],
-    }),
+    schema,
     introspection: true,
     plugins: [
       ApolloServerPluginLandingPageLocalDefault(),
@@ -82,6 +123,15 @@ export const startGqlServer = fromPromise<
         },
       },
       ApolloServerPluginDrainHttpServer({ httpServer }),
+      {
+        serverWillStart() {
+          return Promise.resolve({
+            async drainServer() {
+              await serverCleanup.dispose();
+            },
+          });
+        },
+      },
       ApolloServerPluginCacheControl(),
     ],
     formatError(formattedError, error) {
@@ -93,16 +143,6 @@ export const startGqlServer = fromPromise<
 
   await server.start();
 
-  const sendExternalEvent: GraphQLContext["sendEvent"] = (event) => {
-    if (!event.type.startsWith("riven-external.")) {
-      throw new Error(
-        "Only `riven-external.` events can be sent from the GraphQL server",
-      );
-    }
-
-    mainRunnerRef.send(event);
-  };
-
   const auth = initAuth(orm);
   const withRequestContext: RequestHandler = (_req, _res, next) => {
     RequestContext.create(orm.em, next);
@@ -110,22 +150,16 @@ export const startGqlServer = fromPromise<
 
   app.all("/api/auth/*splat", withRequestContext, toNodeHandler(auth));
 
-  const sendEvent: MainRunnerMachineIntake = (event) => {
-    mainRunnerRef.send(event);
-  };
-
   app.use(
-    "/graphql",
+    graphqlPath,
     cors(),
     express.json(),
     withRequestContext,
-    expressMiddleware(server, {
-      context: buildContextFunction(sendEvent, sendExternalEvent, validPlugins),
-    }),
+    expressMiddleware(server, { context }),
   );
 
   const url = new URL(
-    `http://${settings.host}:${settings.port.toString()}/graphql`,
+    `http://${settings.host}:${settings.port.toString()}/${graphqlPath}`,
   );
 
   await new Promise<void>((resolve) => {
