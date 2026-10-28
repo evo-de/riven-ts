@@ -14,7 +14,7 @@ Legend: `[x]` done · `[ ]` todo · `[~]` in progress / partially done
 - [x] Research existing media server plugins (Jellyfin, Plex), generator, plugin registration, wiki
 - [x] Research Silo API (scan API, auth, capabilities, Docker setup)
 - [x] Decisions agreed with user (see [Decisions](#decisions))
-- [ ] 1. Scaffold package via `turbo gen plugin` (name: `silo`)
+- [x] 1. Scaffold package via `turbo gen plugin` (name: `silo`)
 - [ ] 2. Settings schema
 - [ ] 3. Hand-written zod schemas
 - [ ] 4. Datasource `SiloAPI`
@@ -30,6 +30,18 @@ Legend: `[x]` done · `[ ]` todo · `[~]` in progress / partially done
 _Add dated entries here when something deviates from the plan below._
 
 - 2026-10-28: Plan created. No code written yet.
+- 2026-10-28: Toolchain was missing on the dev machine; installed pnpm 12.15.0 (official script,
+  `PNPM_HOME=~/.local/share/pnpm`) and Node 24 via `pnpm env use --global 24`. If `pnpm` is not
+  on PATH in a fresh shell, `export PATH=$HOME/.local/share/pnpm/bin:$PATH`.
+- 2026-10-28: **Tests are not run for now** (user decision): the plugin test context needs a system
+  `redis-server` binary (via `redis-memory-server`), which is not installed and there is no Docker.
+  Tests are still written; lint, typecheck and build are run instead. Run
+  `pnpm --filter @repo/plugin-silo test` once `redis-server` is available.
+- 2026-10-28: Step 1 — the generator registered the package as `catalog:` (plus a
+  `pnpm-workspace.yaml` catalog entry) in `apps/riven` and `apps/wiki` `dependencies`. Fixed by
+  hand to `workspace:^`, and moved to `devDependencies` in `apps/wiki` to match the other plugins.
+  Added `@apollo/datasource-rest` and `@typescript/native` to the plugin's package.json (Jellyfin
+  has them; the template doesn't). The generator bug itself is not fixed.
 
 ## Decisions
 
@@ -95,11 +107,11 @@ got `"@repo/plugin-silo": "workspace:^"` and `pnpm-lock.yaml` is updated.
 
 ### 2. Settings — `lib/silo-settings.schema.ts`
 
-| Setting           | Validation                                | Notes                                                    |
-| ----------------- | ----------------------------------------- | -------------------------------------------------------- |
-| `siloApiKey`      | `z.string().startsWith("sa_")`            | Admin API key; describe the admin requirement            |
+| Setting           | Validation                                    | Notes                                                    |
+| ----------------- | --------------------------------------------- | -------------------------------------------------------- |
+| `siloApiKey`      | `z.string().startsWith("sa_")`                | Admin API key; describe the admin requirement            |
 | `siloServerUrl`   | `z.url({ protocol: z.regexes.httpProtocol })` | Native API URL, e.g. `http://localhost:8090/` (not 8096) |
-| `siloLibraryPath` | `z.string().min(1)`, default `/mount`     | Prefix of Silo library paths as Silo's container sees it |
+| `siloLibraryPath` | `z.string().min(1)`, default `/mount`         | Prefix of Silo library paths as Silo's container sees it |
 
 ### 3. Hand-written schemas — `lib/schemas/`
 
