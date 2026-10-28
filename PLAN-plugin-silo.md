@@ -21,9 +21,9 @@ Legend: `[x]` done · `[ ]` todo · `[~]` in progress / partially done
 - [x] 5. Plugin definition + `download.success` hook
 - [x] 6. GraphQL resolvers
 - [~] 7. Tests — written, lint/typecheck clean, **not yet run** (no `redis-server`, see log)
-- [ ] 8. Dev docker stack (package compose + `.env.silo.example` + root compose)
-- [ ] 9. Docs & wiki updates
-- [ ] 10. Verification
+- [x] 8. Dev docker stack (package compose + `.env.silo.example` + root compose) — `docker compose config` **not yet run** (no Docker on dev machine)
+- [x] 9. Docs & wiki updates
+- [~] 10. Verification — remaining: run vitest suite, `docker compose --profile services config`, optional manual smoke test
 
 ### Notes / deviations log
 
@@ -52,6 +52,19 @@ _Add dated entries here when something deviates from the plan below._
   Silo coalesces same-scope scans, so a repeated request only causes another scan of the same path.
 - 2026-10-28: Step 6 — the scaffolded resolvers already matched Jellyfin's; only the resolver spec
   needed its MSW handler pointed at `GET /api/v2/scan/capabilities`.
+- 2026-10-28: Step 8 — dropped upstream's `compat` volume (only used by the Jellyfin compatibility
+  layer). Healthcheck uses `curl` (present in the image) against `/api/v2/system/info` instead of the
+  image's built-in `/api/v1/health` (v1 is being retired). `depends_on` lives in the package compose
+  file, same pattern as `riven` → `riven-db`/`riven-cache`. YAML parse + service wiring were
+  checked with the `yaml` package; `docker compose config` still needs to run.
+- 2026-10-28: Step 9 — Silo is now mentioned next to Plex and Jellyfin in the wiki pages listed
+  in the plan, and `CONTRIBUTING.md` documents the `.env.silo` / `SECRET_KEY` setup and the `silo`
+  service. The generated settings table renders `startsWith: sa_` slightly oddly (italics end
+  before the underscore) but reads correctly.
+- 2026-10-28: Step 10 — passing: plugin `lint` (type-aware + typecheck), plugin `build`,
+  `turbo build --filter=@repo/riven`, `turbo build --filter=@repo/wiki` (emits
+  `/docs/plugins/silo/settings`), `pnpm knip` (hints only, no issues), `pnpm format:check` (only
+  the untracked `.claude/settings.local.json` is flagged).
 
 ## Decisions
 
