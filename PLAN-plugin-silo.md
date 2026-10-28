@@ -15,12 +15,12 @@ Legend: `[x]` done · `[ ]` todo · `[~]` in progress / partially done
 - [x] Research Silo API (scan API, auth, capabilities, Docker setup)
 - [x] Decisions agreed with user (see [Decisions](#decisions))
 - [x] 1. Scaffold package via `turbo gen plugin` (name: `silo`)
-- [ ] 2. Settings schema
-- [ ] 3. Hand-written zod schemas
-- [ ] 4. Datasource `SiloAPI`
-- [ ] 5. Plugin definition + `download.success` hook
-- [ ] 6. GraphQL resolvers
-- [ ] 7. Tests
+- [x] 2. Settings schema
+- [x] 3. Hand-written zod schemas (problem-document schema dropped, see log)
+- [x] 4. Datasource `SiloAPI`
+- [x] 5. Plugin definition + `download.success` hook
+- [x] 6. GraphQL resolvers
+- [~] 7. Tests — written, lint/typecheck clean, **not yet run** (no `redis-server`, see log)
 - [ ] 8. Dev docker stack (package compose + `.env.silo.example` + root compose)
 - [ ] 9. Docs & wiki updates
 - [ ] 10. Verification
@@ -42,6 +42,16 @@ _Add dated entries here when something deviates from the plan below._
   hand to `workspace:^`, and moved to `devDependencies` in `apps/wiki` to match the other plugins.
   Added `@apollo/datasource-rest` and `@typescript/native` to the plugin's package.json (Jellyfin
   has them; the template doesn't). The generator bug itself is not fixed.
+- 2026-10-28: Steps 3/4 — `BaseDataSource` (`packages/util-plugin-sdk/lib/datasource/index.ts`)
+  drops error response bodies (`parsedBody: null`, `new Response(null, …)`), so Silo's RFC 9457
+  problem documents never reach the plugin. Dropped `problem-document.schema.ts`; `SiloAPI` maps
+  the documented status codes (400/401/403/404/409/503) to readable reasons instead. Changing the
+  SDK to forward error bodies was considered out of scope.
+- 2026-10-28: Step 4 — `BaseDataSource` retries requests (3 attempts, exponential backoff) on
+  408/425/429/5xx and network errors, including the "non-retryable" `POST /api/v2/scan`. Accepted:
+  Silo coalesces same-scope scans, so a repeated request only causes another scan of the same path.
+- 2026-10-28: Step 6 — the scaffolded resolvers already matched Jellyfin's; only the resolver spec
+  needed its MSW handler pointed at `GET /api/v2/scan/capabilities`.
 
 ## Decisions
 
