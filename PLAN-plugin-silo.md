@@ -21,9 +21,9 @@ Legend: `[x]` done · `[ ]` todo · `[~]` in progress / partially done
 - [x] 5. Plugin definition + `download.success` hook
 - [x] 6. GraphQL resolvers
 - [~] 7. Tests — written, lint/typecheck clean, **not yet run** (no `redis-server`, see log)
-- [x] 8. Dev docker stack (package compose + `.env.silo.example` + root compose) — `docker compose config` **not yet run** (no Docker on dev machine)
+- [x] 8. Dev docker stack (package compose + `.env.silo.example` + root compose) — validated, see log
 - [x] 9. Docs & wiki updates
-- [~] 10. Verification — remaining: run vitest suite, `docker compose --profile services config`, optional manual smoke test
+- [~] 10. Verification — remaining: run vitest suite, optional manual smoke test
 
 ### Notes / deviations log
 
@@ -65,6 +65,15 @@ _Add dated entries here when something deviates from the plan below._
   `turbo build --filter=@repo/riven`, `turbo build --filter=@repo/wiki` (emits
   `/docs/plugins/silo/settings`), `pnpm knip` (hints only, no issues), `pnpm format:check` (only
   the untracked `.claude/settings.local.json` is flagged).
+- 2026-10-28: Step 8 validated — Docker installed on the dev machine. `docker compose --profile
+services config` passes; `silo`, `silo-db` and `silo-cache` start and report healthy. Against the
+  running Silo (`server_version` `23aec3e1`, `api_major` 2), `GET /api/v2/system/info` answers 200,
+  and `GET /api/v2/scan/capabilities` and `POST /api/v2/scan` exist and answer 401 without a key.
+- 2026-10-28: Dev setup note — Docker creates missing bind-mount dirs as root. `riven-cache` runs as
+  `user: "1000:1000"` and fails with `Can't open or create append-only dir appendonlydir:
+Permission denied` until `apps/riven/docker-data/riven-cache` is owned by 1000:1000. Not
+  Silo-related; the Silo services don't set `user`, so their images fix ownership themselves.
+  The root `.env` (from `.env.example`, provides `HOST_VFS_MOUNT_PATH`) is also required.
 
 ## Decisions
 
