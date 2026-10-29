@@ -12,9 +12,11 @@ services:
       DATABASE_URL: postgres://silo:silo@silo-db:5432/silo?sslmode=disable
       REDIS_URL: redis://silo-cache:6379
       SILO_PLUGIN_CACHE_DIR: /var/lib/silo/plugins
-    # Only the native API is published; Riven does not use the Jellyfin compatibility layer
+    # 8080: native API and web UI (used by Riven)
+    # 8096: Jellyfin compatibility layer, e.g. for connecting Seerr - Riven does not use it
     ports:
       - 8090:8080
+      - 8096:8096
     volumes:
       - ./docker-data/silo/plugins:/var/lib/silo/plugins
       - ./docker-data/silo/artwork:/var/lib/silo/artwork
