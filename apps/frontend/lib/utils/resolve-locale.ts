@@ -1,3 +1,5 @@
+export const defaultLocale = "en-US";
+
 /**
  * Resolves an `Accept-Language` header to the preferred ISO-compatible locale
  */
@@ -36,5 +38,5 @@ export function resolveLocale(acceptLanguage: string | null): string {
     }
   }
 
-  return "en-US";
+  return defaultLocale;
 }

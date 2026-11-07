@@ -1,4 +1,3 @@
-import { upperFirst } from "es-toolkit";
 import {
   ZodArray,
   ZodString,
@@ -7,25 +6,21 @@ import {
   ZodNumber,
   ZodObject,
   ZodRecord,
-  ZodTuple,
   ZodDefault,
   ZodOptional,
   ZodNullable,
   ZodBoolean,
-  ZodUnion,
   z,
 } from "zod";
 
-import type { SecretState } from "#app/_types/__generated__/graphql.ts";
 import type {
   CommonSettingFieldProps,
   SettingFieldProps,
 } from "#components/settings/setting-field/setting-field.tsx";
 import type { Constructor } from "type-fest";
-import type { GlobalMeta } from "zod";
 import type { $ZodType } from "zod/v4/core";
 
-function getSchemaMetadata(schema: $ZodType): GlobalMeta {
+function getSchemaMetadata(schema: $ZodType) {
   if (schema instanceof ZodType) {
     return schema.meta() ?? {};
   }
@@ -33,41 +28,20 @@ function getSchemaMetadata(schema: $ZodType): GlobalMeta {
   return {};
 }
 
-export interface BuildSettingsContext {
-  lockedFields?: ReadonlySet<string>;
-  secretStates?: ReadonlyMap<string, SecretState>;
-  onResetSecret?: (path: string) => void;
-}
-
-/**
- * Turns an untitled field's key into a label, from its last path segment
- * (e.g. `scraping.dubbedAnimeOnly` becomes "Dubbed anime only").
- *
- * sentenceCase from es-toolkit isn't usable here
- * as it turns keys such as R2160p into "r 2160 p"
- */
-function humaniseKey(key: string) {
-  const segment = key.split(".").at(-1) ?? key;
-
-  return upperFirst(
-    segment.replaceAll(/(?<=[a-z\d])(?=[A-Z])/gu, " ").toLowerCase(),
-  );
-}
-
 function buildCommonConfig(
-  meta: GlobalMeta,
+  schema: $ZodType,
   key?: string,
-  context?: BuildSettingsContext,
 ): CommonSettingFieldProps {
   if (!key) {
     throw new Error("A key must be provided for non-object schemas");
   }
 
+  const meta = getSchemaMetadata(schema);
+
   return {
-    label: meta.title ?? humaniseKey(key),
+    label: meta.title ?? key,
     name: key,
     ...(meta.description && { description: meta.description }),
-    ...(context?.lockedFields?.has(key) && { locked: true }),
   };
 }
 
@@ -84,31 +58,15 @@ function assertSchemaType<T extends $ZodType>(
   }
 }
 
-const isEmptyInput = (value: unknown) => value === "" || value == null;
-
-// An emptied input saves as `null` for a nullable field, otherwise as
-// `undefined`, which leaves the field unset (or at its default)
-const parseTextInput = (value: unknown) =>
-  isEmptyInput(value) ? undefined : value;
-
-const parseNullableTextInput = (value: unknown) =>
-  isEmptyInput(value) ? null : value;
-
 function buildStringSetting(
   schema: ZodString,
   key: string | undefined,
   required: boolean,
-  nullable: boolean,
-  meta: GlobalMeta,
-  context?: BuildSettingsContext,
 ): SettingEntry {
   const { minLength, maxLength } = schema;
-  const commonConfig = buildCommonConfig(meta, key, context);
+  const commonConfig = buildCommonConfig(schema, key);
 
-  if (meta.secret) {
-    const secretState = context?.secretStates?.get(commonConfig.name);
-    const { onResetSecret } = context ?? {};
-
+  if (getSchemaMetadata(schema).secret) {
     return [
       commonConfig.name,
       {
@@ -116,12 +74,6 @@ function buildStringSetting(
         config: {
           ...commonConfig,
           registerOptions: { required },
-          ...(secretState && { secretState }),
-          ...(onResetSecret && {
-            onReset: () => {
-              onResetSecret(commonConfig.name);
-            },
-          }),
         },
       },
     ];
@@ -137,7 +89,6 @@ function buildStringSetting(
           ...(minLength == null ? {} : { minLength }),
           ...(maxLength == null ? {} : { maxLength }),
           required,
-          setValueAs: nullable ? parseNullableTextInput : parseTextInput,
         },
       },
     },
@@ -145,15 +96,13 @@ function buildStringSetting(
 }
 
 function buildBooleanSetting(
+  schema: ZodBoolean,
   key: string | undefined,
   required: boolean,
-  nullable: boolean,
-  meta: GlobalMeta,
-  context?: BuildSettingsContext,
 ): SettingEntry {
-  const commonConfig = buildCommonConfig(meta, key, context);
+  const commonConfig = buildCommonConfig(schema, key);
 
-  if (nullable) {
+  if (!required) {
     return [
       commonConfig.name,
       {
@@ -172,7 +121,7 @@ function buildBooleanSetting(
       type: "boolean",
       config: {
         ...commonConfig,
-        registerOptions: { required },
+        registerOptions: { required: true },
       },
     },
   ];
@@ -182,10 +131,8 @@ function buildEnumSetting(
   schema: ZodEnum,
   key: string | undefined,
   required: boolean,
-  meta: GlobalMeta,
-  context?: BuildSettingsContext,
 ): SettingEntry {
-  const commonConfig = buildCommonConfig(meta, key, context);
+  const commonConfig = buildCommonConfig(schema, key);
   const { enum: enumValues } = schema;
 
   return [
@@ -204,40 +151,29 @@ function buildEnumSetting(
   ];
 }
 
-/** Builds a string array field, or nothing for arrays of any other element type. */
 function buildArraySetting(
   schema: ZodArray,
   key: string | undefined,
   required: boolean,
-  meta: GlobalMeta,
-  context?: BuildSettingsContext,
-): SettingEntry | undefined {
+): SettingEntry {
+  const commonConfig = buildCommonConfig(schema, key);
   const { element } = schema;
 
-  if (!(element instanceof ZodString || element instanceof ZodEnum)) {
-    return undefined;
+  if (element instanceof ZodString) {
+    return [
+      commonConfig.name,
+      {
+        type: "string_array",
+        config: {
+          ...commonConfig,
+          registerOptions: { required },
+        },
+      },
+    ];
   }
 
-  const commonConfig = buildCommonConfig(meta, key, context);
-
-  return [
-    commonConfig.name,
-    {
-      type: "string_array",
-      config: {
-        ...commonConfig,
-        registerOptions: { required },
-      },
-    },
-  ];
+  throw new Error(`Unsupported array element type: ${element._zod.def.type}`);
 }
-
-/** Parses a number input's value, so an emptied input is never submitted as `NaN`. */
-const parseNumberInput = (value: unknown) =>
-  isEmptyInput(value) ? undefined : Number(value);
-
-const parseNullableNumberInput = (value: unknown) =>
-  isEmptyInput(value) ? null : Number(value);
 
 function getNumberStep(multipleOf: unknown, isInt: boolean) {
   if (typeof multipleOf === "number" && Number.isFinite(multipleOf)) {
@@ -251,11 +187,8 @@ function buildNumberSetting(
   schema: ZodNumber,
   key: string | undefined,
   required: boolean,
-  nullable: boolean,
-  meta: GlobalMeta,
-  context?: BuildSettingsContext,
 ): SettingEntry {
-  const commonConfig = buildCommonConfig(meta, key, context);
+  const commonConfig = buildCommonConfig(schema, key);
 
   const { multipleOf, minimum, maximum, type } = z.toJSONSchema(schema);
   const hasMinConstraint = minimum != null && Number.isFinite(minimum);
@@ -271,7 +204,7 @@ function buildNumberSetting(
           ...(hasMinConstraint ? { min: minimum } : {}),
           ...(hasMaxConstraint ? { max: maximum } : {}),
           required,
-          setValueAs: nullable ? parseNullableNumberInput : parseNumberInput,
+          valueAsNumber: true,
         },
         step: getNumberStep(multipleOf, type === "integer"),
       },
@@ -279,46 +212,26 @@ function buildNumberSetting(
   ];
 }
 
-/**
- * @param nullable Whether a `.nullable()` wrapper was unwrapped on the way to this schema, so `null` is a valid value.
- *   Unlike `required`, a default or optional wrapper doesn't set it.
- */
 export function buildSettingsConfigFromZodSchema(
   schema: $ZodType,
   key?: string,
   required = true,
-  wrapperMeta: GlobalMeta = {},
-  context?: BuildSettingsContext,
-  nullable = false,
 ): Map<string, SettingFieldProps> {
   const settings = new Map<string, SettingFieldProps>();
-  const meta = { ...getSchemaMetadata(schema), ...wrapperMeta };
+  const meta = getSchemaMetadata(schema);
 
   switch (schema._zod.def.type) {
     case "string": {
       assertSchemaType(schema, ZodString);
 
-      const [name, setting] = buildStringSetting(
-        schema,
-        key,
-        required,
-        nullable,
-        meta,
-        context,
-      );
+      const [name, setting] = buildStringSetting(schema, key, required);
 
       return settings.set(name, setting);
     }
     case "boolean": {
       assertSchemaType(schema, ZodBoolean);
 
-      const [name, setting] = buildBooleanSetting(
-        key,
-        required,
-        nullable,
-        meta,
-        context,
-      );
+      const [name, setting] = buildBooleanSetting(schema, key, required);
 
       return settings.set(name, setting);
     }
@@ -326,48 +239,33 @@ export function buildSettingsConfigFromZodSchema(
     case "number": {
       assertSchemaType(schema, ZodNumber);
 
-      const [name, setting] = buildNumberSetting(
-        schema,
-        key,
-        required,
-        nullable,
-        meta,
-        context,
-      );
+      const [name, setting] = buildNumberSetting(schema, key, required);
 
       return settings.set(name, setting);
     }
     case "enum": {
       assertSchemaType(schema, ZodEnum);
 
-      const [name, setting] = buildEnumSetting(
-        schema,
-        key,
-        required,
-        meta,
-        context,
-      );
+      const [name, setting] = buildEnumSetting(schema, key, required);
 
       return settings.set(name, setting);
     }
     case "array": {
       assertSchemaType(schema, ZodArray);
 
-      const entry = buildArraySetting(schema, key, required, meta, context);
+      const [name, setting] = buildArraySetting(schema, key, required);
 
-      return entry ? settings.set(...entry) : settings;
+      return settings.set(name, setting);
     }
     case "record": {
       assertSchemaType(schema, ZodRecord);
 
+      const commonConfig = buildCommonConfig(schema, key);
       const { keyType, valueType } = schema;
 
-      // Only string keys can be typed in, so other records render nothing
       if (!(keyType instanceof ZodString)) {
-        return settings;
+        throw new Error("Only string keys are supported for record schemas");
       }
-
-      const commonConfig = buildCommonConfig(meta, key, context);
 
       const { title: keyTitle } = keyType.meta() ?? {};
 
@@ -376,8 +274,6 @@ export function buildSettingsConfigFromZodSchema(
           valueType,
           `${commonConfig.name}.value`,
           required,
-          {},
-          context,
         ).values(),
       ];
 
@@ -388,47 +284,6 @@ export function buildSettingsConfigFromZodSchema(
           itemFields,
           ...(keyTitle && { keyLabel: keyTitle }),
         },
-      });
-    }
-    case "tuple": {
-      assertSchemaType(schema, ZodTuple);
-
-      // A rest element has no fixed number of inputs, so it renders nothing
-      if (schema.def.rest) {
-        return settings;
-      }
-
-      const commonConfig = buildCommonConfig(meta, key, context);
-
-      const itemFields = schema.def.items.flatMap((element, index) => {
-        const itemName = `${commonConfig.name}.${index.toString()}`;
-
-        return buildSettingsConfigFromZodSchema(
-          element,
-          itemName,
-          required,
-          {},
-          context,
-        )
-          .values()
-          .map((itemField) => {
-            // An untitled element falls back to its key as the label, so
-            // replace that with a positional label.
-            if (
-              "label" in itemField.config &&
-              itemField.config.label === humaniseKey(itemName)
-            ) {
-              itemField.config.label = `${commonConfig.label} ${(index + 1).toString()}`;
-            }
-
-            return itemField;
-          })
-          .toArray();
-      });
-
-      return settings.set(commonConfig.name, {
-        type: "tuple",
-        config: { ...commonConfig, itemFields },
       });
     }
     case "object": {
@@ -442,8 +297,6 @@ export function buildSettingsConfigFromZodSchema(
             fieldSchema,
             [key, fieldKey].filter(Boolean).join("."),
             required,
-            {},
-            context,
           )
             .entries()
             .toArray(),
@@ -470,66 +323,21 @@ export function buildSettingsConfigFromZodSchema(
 
       const innerSchema = schema.unwrap();
 
-      return buildSettingsConfigFromZodSchema(
-        innerSchema,
-        key,
-        false,
-        meta,
-        context,
-        nullable,
-      );
+      return buildSettingsConfigFromZodSchema(innerSchema, key, required);
     }
     case "optional": {
       assertSchemaType(schema, ZodOptional);
 
       const innerSchema = schema.unwrap();
 
-      return buildSettingsConfigFromZodSchema(
-        innerSchema,
-        key,
-        false,
-        meta,
-        context,
-        nullable,
-      );
+      return buildSettingsConfigFromZodSchema(innerSchema, key, false);
     }
     case "nullable": {
       assertSchemaType(schema, ZodNullable);
 
       const innerSchema = schema.unwrap();
 
-      return buildSettingsConfigFromZodSchema(
-        innerSchema,
-        key,
-        false,
-        meta,
-        context,
-        true,
-      );
-    }
-    case "union": {
-      assertSchemaType(schema, ZodUnion);
-
-      // A served `.nullable()` comes back from JSON Schema as a union with
-      // null, so it's built as the other member with null allowed
-      const { options } = schema;
-      const nonNullOptions = options.filter(
-        (option) => option._zod.def.type !== "null",
-      );
-      const [innerSchema] = nonNullOptions;
-
-      if (options.length !== 2 || nonNullOptions.length !== 1 || !innerSchema) {
-        return settings;
-      }
-
-      return buildSettingsConfigFromZodSchema(
-        innerSchema,
-        key,
-        false,
-        meta,
-        context,
-        true,
-      );
+      return buildSettingsConfigFromZodSchema(innerSchema, key, false);
     }
     case "any":
     case "bigint":
@@ -546,7 +354,9 @@ export function buildSettingsConfigFromZodSchema(
     case "promise":
     case "set":
     case "symbol":
+    case "tuple":
     case "undefined":
+    case "union":
     case "unknown":
     case "file":
     case "intersection":

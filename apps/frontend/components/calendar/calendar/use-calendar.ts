@@ -1,40 +1,27 @@
-import { DateTime, Info, Settings } from "luxon";
-import { useRouter } from "next/navigation";
+import { DateTime, Info, Interval, Settings } from "luxon";
 import { useEffect, useMemo, useState } from "react";
 
-import { getCurrentMonthInterval } from "../utilities/get-current-month-interval";
-
-export interface CalendarMonth {
-  month: number;
-  year: number;
-}
-
-export function useCalendar(initialMonth?: CalendarMonth) {
-  const router = useRouter();
+export function useCalendar() {
   const today = DateTime.local();
   const currentMonth = today.startOf("month", { useLocaleWeeks: true });
 
-  const [selectedMonth, setSelectedMonth] = useState(() =>
-    initialMonth
-      ? DateTime.fromObject(initialMonth).startOf("month", {
-          useLocaleWeeks: true,
-        })
-      : currentMonth,
-  );
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
 
   useEffect(() => {
     setSelectedMonth(selectedMonth.setLocale(Settings.defaultLocale));
   }, [Settings.defaultLocale]);
 
-  useEffect(() => {
-    router.push(
-      `/calendar?month=${selectedMonth.month.toString()}&year=${selectedMonth.year.toString()}`,
-    );
-  }, [selectedMonth]);
+  const endOfMonth = selectedMonth.endOf("month", { useLocaleWeeks: true });
 
-  const currentMonthDays = getCurrentMonthInterval(selectedMonth).splitBy({
-    days: 1,
-  });
+  const intervalEnd = DateTime.max(
+    endOfMonth,
+    endOfMonth.endOf("week", { useLocaleWeeks: true }),
+  );
+
+  const currentMonthDays = Interval.fromDateTimes(
+    selectedMonth.startOf("week", { useLocaleWeeks: true }),
+    intervalEnd,
+  ).splitBy({ days: 1 });
 
   function isToday(date: DateTime) {
     return date.hasSame(today, "day");

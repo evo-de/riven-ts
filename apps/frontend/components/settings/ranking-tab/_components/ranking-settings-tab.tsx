@@ -1,5 +1,3 @@
-"use client";
-
 import { createSettings, SettingsSchema } from "@repo/util-rank-torrent-name";
 
 import { FormProvider, useForm } from "react-hook-form";

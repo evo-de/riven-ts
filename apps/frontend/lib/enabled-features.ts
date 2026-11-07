@@ -1,9 +1,7 @@
 const enabledFeatures = {
-  calendarPage: true,
+  calendarPage: false,
   dashboardPage: false,
-  settingsPage: true,
-  rankingTab: false,
-  dangerZone: false,
+  settingsPage: false,
   logsPage: false,
   notificationCentre: false,
   selectableLibraryItems: false,

@@ -29,7 +29,7 @@ export function Header({ modifierKey }: HeaderProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Local input value state to decouple from URL updates whilst typing
+  // Local input value state to decouple from URL updates while typing
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const form = useForm({
@@ -59,7 +59,7 @@ export function Header({ modifierKey }: HeaderProps) {
   );
 
   useEffect(() => {
-    // Sync external URL changes to input, but avoid overwriting whilst typing
+    // Sync external URL changes to input, but avoid overwriting while typing
     const urlQuery = searchParams.get("query") ?? "";
 
     // Only update if the value is different and we aren't focused

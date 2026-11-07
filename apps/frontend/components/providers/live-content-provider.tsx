@@ -16,5 +16,7 @@ export function useLiveContent() {
 
 /** Provider component that wraps a section of content that may be updated by a subscription */
 export function LiveContentProvider({ children }: PropsWithChildren) {
-  return <LiveContentContext value>{children}</LiveContentContext>;
+  return (
+    <LiveContentContext.Provider value>{children}</LiveContentContext.Provider>
+  );
 }

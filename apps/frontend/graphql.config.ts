@@ -2,13 +2,6 @@ import type { CodegenConfig } from "@graphql-codegen/cli";
 import type { TypeScriptPluginConfig } from "@graphql-codegen/typescript";
 import type { TypeScriptDocumentsPluginConfig } from "@graphql-codegen/typescript-operations";
 
-const scalars = {
-  ID: "string",
-  BigInt: "number",
-  DateTimeISO: "string",
-  JSONObject: "Record<string, unknown>",
-} as const;
-
 export default {
   schema: "../riven/schema.graphql",
   documents: [
@@ -25,8 +18,6 @@ export default {
       plugins: ["typescript"],
       config: {
         enumsAsTypes: true,
-        scalars,
-        strictScalars: true,
       } satisfies TypeScriptPluginConfig,
     },
     "./app/": {
@@ -40,7 +31,12 @@ export default {
       plugins: ["typescript-operations"],
       // Note: these config options moved from the other generated file config
       config: {
-        scalars,
+        scalars: {
+          ID: "string",
+          BigInt: "number",
+          DateTimeISO: "string",
+          JSONObject: "Record<string, unknown>",
+        },
         strictScalars: true,
         avoidOptionals: {
           // Use `null` for nullable fields instead of optionals

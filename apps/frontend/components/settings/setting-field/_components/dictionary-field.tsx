@@ -1,5 +1,3 @@
-"use client";
-
 import { Trash } from "lucide-react";
 import { useId } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";

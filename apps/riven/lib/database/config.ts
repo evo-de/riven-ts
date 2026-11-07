@@ -24,7 +24,6 @@ import {
   Passkey,
   Session,
   Verification,
-  Setting,
 } from "./entities/index.ts";
 import { ItemRequestChangeSubscriber } from "./subscribers/item-request-change.subscriber.ts";
 import { ItemRequestStateSubscriber } from "./subscribers/item-request-state.subscriber.ts";
@@ -55,7 +54,6 @@ const entities = [
   Passkey,
   Session,
   Verification,
-  Setting,
 ];
 
 async function getMetadataCacheConfig(): Promise<Options> {

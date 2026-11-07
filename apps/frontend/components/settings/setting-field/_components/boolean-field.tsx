@@ -1,5 +1,3 @@
-"use client";
-
 import { useId, useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 
@@ -17,7 +15,6 @@ export function SettingsBooleanField({
   name,
   label,
   description,
-  registerOptions,
   ...props
 }: SettingsBooleanFieldProps) {
   const id = useId();
@@ -26,7 +23,7 @@ export function SettingsBooleanField({
     [name]: boolean;
   }>();
   const defaultValue = useMemo(() => getValues(name), [getValues, name]);
-  const field = register(name, registerOptions);
+  const field = register(name, props.registerOptions);
 
   return (
     <div className="flex items-center justify-between gap-4">

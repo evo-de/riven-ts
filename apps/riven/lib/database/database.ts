@@ -1,5 +1,4 @@
 import { AuthService } from "./services/auth/auth.service.ts";
-import { CalendarService } from "./services/calendar/calendar.service.ts";
 import { DownloaderService } from "./services/downloader/downloader.service.ts";
 import { IndexerService } from "./services/indexer/indexer.service.ts";
 import { ItemRequestService } from "./services/item-request/item-request.service.ts";
@@ -8,7 +7,6 @@ import { MediaItemService } from "./services/media-item/media-item.service.ts";
 import { PostProcessingService } from "./services/post-processing/post-processing.service.ts";
 import { RetryLibraryService } from "./services/retry-library/retry-library.service.ts";
 import { ScraperService } from "./services/scraper/scraper.service.ts";
-import { SettingsService } from "./services/settings/settings.service.ts";
 import { StreamService } from "./services/stream/stream.service.ts";
 import { SubtitlesService } from "./services/subtitles/subtitles.service.ts";
 import { VfsService } from "./services/vfs/vfs.service.ts";
@@ -22,7 +20,6 @@ export interface Database {
 
 export interface Services {
   authService: AuthService;
-  calendarService: CalendarService;
   downloaderService: DownloaderService;
   indexerService: IndexerService;
   itemRequestService: ItemRequestService;
@@ -31,7 +28,6 @@ export interface Services {
   postProcessingService: PostProcessingService;
   retryLibraryService: RetryLibraryService;
   scraperService: ScraperService;
-  settingsService: SettingsService;
   streamService: StreamService;
   subtitlesService: SubtitlesService;
   vfsService: VfsService;
@@ -64,7 +60,6 @@ export async function initORM(options: Partial<Options>) {
 
   services = {
     authService: new AuthService(orm),
-    calendarService: new CalendarService(orm),
     downloaderService: new DownloaderService(orm),
     indexerService: new IndexerService(orm),
     itemRequestService: new ItemRequestService(orm),
@@ -73,7 +68,6 @@ export async function initORM(options: Partial<Options>) {
     postProcessingService: new PostProcessingService(orm),
     retryLibraryService: new RetryLibraryService(orm),
     scraperService: new ScraperService(orm),
-    settingsService: new SettingsService(orm),
     streamService: new StreamService(orm),
     subtitlesService: new SubtitlesService(orm),
     vfsService: new VfsService(orm),

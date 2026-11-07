@@ -6,6 +6,7 @@ import { PlexRSSAPI } from "./datasource/plex-rss.datasource.ts";
 import { PlexAPI } from "./datasource/plex.datasource.ts";
 import { pluginConfig } from "./plex-plugin.config.ts";
 import { PlexSettings } from "./plex-settings.schema.ts";
+import { PlexSettingsResolver } from "./schema/plex-settings.resolver.ts";
 import { PlexResolver } from "./schema/plex.resolver.ts";
 
 import type { WatchlistItem } from "./schemas/watchlist-item.schema.ts";
@@ -33,7 +34,7 @@ export const plugin: RivenPlugin = {
   name: pluginConfig.name,
   version: packageJson.version,
   dataSources: [PlexAPI, PlexDiscoverAPI, PlexRSSAPI],
-  resolvers: [PlexResolver],
+  resolvers: [PlexResolver, PlexSettingsResolver],
   hooks: {
     "riven.media-item.download.success": async ({
       dataSources,

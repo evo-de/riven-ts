@@ -4,7 +4,7 @@ import { startTransition, useEffect, useState } from "react";
 import { expect, waitFor, within } from "storybook/test";
 
 import preview from "#.storybook/preview.tsx";
-import { GET_MEDIA_ITEM_ACTIONS } from "#app/(protected)/details/media/[type]/[id]/_components/item-action-toolbar/_queries/get-media-item-actions.query.ts";
+import { GET_ITEM_REQUEST_ACTIONS } from "#app/(protected)/details/media/[type]/[id]/_components/item-action-toolbar/_queries/get-item-request-actions.query.ts";
 import { ON_ITEM_REQUEST_CHANGED } from "#app/(protected)/details/media/[type]/[id]/_components/item-action-toolbar/_subscriptions/on-item-request-changed.subscription.ts";
 import { DELETE_ITEM_REQUEST } from "#app/(protected)/details/media/[type]/[id]/_components/item-action-toolbar/actions/delete-item/_mutations/delete-item-request.mutation.ts";
 import { PAUSE_ITEM } from "#app/(protected)/details/media/[type]/[id]/_components/item-action-toolbar/actions/pause-item/_mutations/pause-item.mutation.ts";
@@ -31,7 +31,7 @@ import type { SeasonState } from "#app/(protected)/details/media/[type]/[id]/_co
 import type { GetItemSeasonStatesQuery } from "#app/(protected)/details/media/[type]/[id]/_components/item-seasons/_queries/get-item-season-states.query.typegen.ts";
 import type { GetMediaItemQuery } from "#app/(protected)/details/media/[type]/[id]/_queries/get-media-item.query.typegen.ts";
 import type {
-  MediaItemAction,
+  ItemRequestAction,
   MediaItem,
 } from "#app/_types/__generated__/graphql.ts";
 import type { query, resetClient } from "#lib/graphql/__mocks__/client.ts";
@@ -146,7 +146,7 @@ const mockRequestedMovie = ({
   availableActions,
   mediaItem,
 }: {
-  availableActions: MediaItemAction[];
+  availableActions: ItemRequestAction[];
   mediaItem: RequestedMediaItem;
 }) => {
   const itemRequestId = crypto.randomUUID();
@@ -158,16 +158,16 @@ const mockRequestedMovie = ({
     primaryMediaItemId,
     publishState: itemState.publishState,
     handlers: [
-      api.query(GET_MEDIA_ITEM_ACTIONS, () =>
+      api.query(GET_ITEM_REQUEST_ACTIONS, () =>
         HttpResponse.json({
           data: {
             itemRequestByExternalIds: {
               __typename: "ItemRequest",
               id: itemRequestId,
-              mediaItem: {
+              availableActions,
+              primaryMediaItem: {
                 __typename: "Movie",
                 id: primaryMediaItemId,
-                availableActions,
               },
               seasons: null,
             },
@@ -240,7 +240,7 @@ const mockRequestedShow = ({
   mediaItem,
   seasons,
 }: {
-  availableActions: MediaItemAction[];
+  availableActions: ItemRequestAction[];
   mediaItem: RequestedMediaItem;
   /**
    * The state of each season's media item, or `null` if the season hasn't been indexed
@@ -256,16 +256,16 @@ const mockRequestedShow = ({
     primaryMediaItemId,
     publishState: itemState.publishState,
     handlers: [
-      api.query(GET_MEDIA_ITEM_ACTIONS, () =>
+      api.query(GET_ITEM_REQUEST_ACTIONS, () =>
         HttpResponse.json({
           data: {
             itemRequestByExternalIds: {
               __typename: "ItemRequest",
               id: itemRequestId,
-              mediaItem: {
+              availableActions,
+              primaryMediaItem: {
                 __typename: "Show",
                 id: primaryMediaItemId,
-                availableActions,
               },
               seasons: null,
             },
@@ -371,7 +371,7 @@ const mockMediaItemQuery = (
  *
  * Storybook can't re-render server components on a server, so the page is re-rendered in a transition instead,
  * with a fresh GraphQL client as `registerApolloClient` creates one per request. Like a real refresh, this keeps
- * the existing DOM (so mount animations don't replay) whilst the async components re-run.
+ * the existing DOM (so mount animations don't replay) while the async components re-run.
  */
 function RefreshablePage({ data: initialData }: { data: MediaDetailsData }) {
   const [data, setData] = useState(initialData);
@@ -664,7 +664,7 @@ export const UnrequestedMovie = meta.story({
           },
         }),
       ),
-      api.query(GET_MEDIA_ITEM_ACTIONS, () =>
+      api.query(GET_ITEM_REQUEST_ACTIONS, () =>
         HttpResponse.json({ data: { itemRequestByExternalIds: null } }),
       ),
     );
@@ -756,7 +756,7 @@ export const CompletedMovie = UnrequestedMovie.extend({
         { removeItemRequest: true },
         () => {
           msw.use(
-            api.query(GET_MEDIA_ITEM_ACTIONS, () =>
+            api.query(GET_ITEM_REQUEST_ACTIONS, () =>
               HttpResponse.json({ data: { itemRequestByExternalIds: null } }),
             ),
             mockMediaItemQuery(args.data, null),
@@ -1165,7 +1165,7 @@ export const UnrequestedShow = meta.story({
           },
         }),
       ),
-      api.query(GET_MEDIA_ITEM_ACTIONS, () =>
+      api.query(GET_ITEM_REQUEST_ACTIONS, () =>
         HttpResponse.json({ data: { itemRequestByExternalIds: null } }),
       ),
     );
@@ -1272,7 +1272,7 @@ export const CompletedShow = UnrequestedShow.extend({
         { removeItemRequest: true },
         () => {
           msw.use(
-            api.query(GET_MEDIA_ITEM_ACTIONS, () =>
+            api.query(GET_ITEM_REQUEST_ACTIONS, () =>
               HttpResponse.json({ data: { itemRequestByExternalIds: null } }),
             ),
             mockMediaItemQuery(args.data, null),

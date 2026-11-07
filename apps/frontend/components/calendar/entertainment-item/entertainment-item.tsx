@@ -7,31 +7,47 @@ import { getTypeStyle } from "#components/calendar/utilities/get-type-style.ts";
 
 import type { EntertainmentItemData } from "#components/calendar/types.d.ts";
 
-function buildItemPath(item: EntertainmentItemData) {
-  switch (item.type) {
-    case "movie":
-    case "show": {
-      return `/details/media/${item.type}/${item.primaryExternalId}` as const;
-    }
-    case "season": {
-      if (!item.number) {
-        throw new Error("Season number is required for season items");
+function formatEpisodeLabel({ season, episode }: EntertainmentItemData) {
+  if (!season) {
+    return "";
+  }
+
+  const episodeLabel = episode ? `E${episode.toString()}` : "";
+
+  return ` S${season.toString()}${episodeLabel}`;
+}
+
+function itemUrl(item: EntertainmentItemData) {
+  switch (item.itemType) {
+    case "movie": {
+      // For movies, prefer TMDB ID
+      if (item.tmdbId) {
+        return `/details/media/${item.itemType}/${item.tmdbId}` as const;
       }
 
-      return `/details/media/show/${item.primaryExternalId}/seasons/${item.number.toString()}` as const;
+      if (item.tvdbId) {
+        return `/details/media/${item.itemType}/${item.tvdbId}` as const;
+      }
+
+      break;
     }
+    case "show":
+    case "season":
     case "episode": {
-      if (!item.seasonNumber) {
-        throw new Error("Season number is required for episode items");
+      // For TV items, prefer TVDB ID to skip TMDB→TVDB resolution
+      if (item.tvdbId) {
+        return `/details/media/${item.itemType}/${item.tvdbId}` as const;
       }
 
-      if (!item.number) {
-        throw new Error("Episode number is required for episode items");
+      if (item.tmdbId) {
+        return `/details/media/${item.itemType}/${item.tmdbId}` as const;
       }
 
-      return `/details/media/show/${item.primaryExternalId}/seasons/${item.seasonNumber.toString()}/episodes/${item.number.toString()}` as const;
+      break;
     }
   }
+
+  return undefined;
 }
 
 export interface EntertainmentItemProps {
@@ -44,14 +60,14 @@ export interface EntertainmentItemProps {
  * compact variant.
  */
 export function EntertainmentItem({ item, compact }: EntertainmentItemProps) {
-  const style = getTypeStyle(item.type);
+  const style = getTypeStyle(item.itemType);
 
   function renderIcon(size = 4) {
     z.int("EntertainmentItem size must be an integer").parse(size);
 
     const cls = `h-${size.toFixed(0)} w-${size.toFixed(0)} shrink-0 ${style.icon}`;
 
-    if (item.type === "movie") {
+    if (item.itemType === "movie") {
       return <Film className={cls} />;
     }
     return <Tv className={cls} />;
@@ -68,36 +84,56 @@ export function EntertainmentItem({ item, compact }: EntertainmentItemProps) {
               compact ? "truncate font-medium" : "font-semibold",
             )}
           >
-            {item.fullTitle}
-          </div>
-          {item.type === "episode" &&
-            item.seasonNumber &&
-            item.number &&
-            !compact && (
-              <div className="text-muted-foreground text-xs">
-                Season {item.seasonNumber}
-                {item.number && `, Episode ${item.number.toString()}`}
-              </div>
+            {item.showTitle}{" "}
+            {item.season && compact && (
+              <>
+                S{item.season}
+                {item.episode && <>E{item.episode}</>}
+              </>
             )}
+          </div>
+          {item.season && item.episode && !compact && (
+            <div className="text-muted-foreground text-xs">
+              Season {item.season}
+              {item.episode && `, Episode ${item.episode.toString()}`}
+            </div>
+          )}
         </div>
       </>
     );
   }
 
+  const href = itemUrl(item);
+
   const classes = cn(
     "group/item flex items-center rounded-md border transition-colors",
     compact ? "gap-1.5 truncate px-2 py-1" : "gap-3 p-2.5",
     style.item,
-    item.state === "completed" && "line-through opacity-60",
-    "no-underline",
+    item.lastState === "Completed" && "line-through opacity-60",
+    href && "no-underline",
   );
 
+  const title = compact
+    ? `${item.showTitle} ${formatEpisodeLabel(item)}`
+    : undefined;
+
+  if (href) {
+    return (
+      <Link href={href} className={classes} title={title}>
+        {compact && (
+          <span className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
+        )}
+        {renderContent()}
+      </Link>
+    );
+  }
+
   return (
-    <Link href={buildItemPath(item)} className={classes} title={item.fullTitle}>
+    <div className={classes} title={title}>
       {compact && (
         <span className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
       )}
       {renderContent()}
-    </Link>
+    </div>
   );
 }

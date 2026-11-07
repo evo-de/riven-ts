@@ -5,8 +5,6 @@ import { assign, enqueueActions, setup } from "xstate";
 import { ZodError } from "zod";
 
 import packageJson from "#package.json" with { type: "json" };
-import { getLeafPaths } from "#settings/utilities/leaf-paths.ts";
-import { resolveSettings } from "#settings/utilities/resolve-settings.ts";
 import { withLogAction } from "#state-machines/utilities/with-log-action.ts";
 import { logger } from "#utilities/logger/logger.ts";
 import { redisCache } from "#utilities/redis-cache.ts";
@@ -17,7 +15,6 @@ import { collectPluginsForRegistration } from "./actors/collect-plugins-for-regi
 import { validatePlugin } from "./actors/validate-plugin.actor.ts";
 import { registerPluginHookWorkers } from "./utilities/register-plugin-hook-workers.ts";
 
-import type { SettingsService } from "#database/services/settings/settings.service.ts";
 import type {
   InvalidPlugin,
   InvalidPluginMap,
@@ -36,7 +33,6 @@ import type { AnyActorRef, MachineContext } from "xstate";
 
 export interface PluginRegistrarMachineContext extends MachineContext {
   rootRef: AnyActorRef;
-  settingsService: SettingsService;
   parsedPlugins: ParsedPlugins | null;
   runningValidators: Map<symbol, AnyActorRef>;
   pendingPlugins: PendingPluginMap;
@@ -50,13 +46,9 @@ export interface PluginRegistrarMachineContext extends MachineContext {
 
 export interface PluginRegistrarMachineInput {
   rootRef: AnyActorRef;
-  settingsService: SettingsService;
 }
 
-export interface PluginRegistrarMachineOutput extends Pick<
-  ParsedPlugins,
-  "installedPlugins" | "pluginEnvironment"
-> {
+export interface PluginRegistrarMachineOutput {
   validPlugins: ValidPluginMap;
   invalidPlugins: InvalidPluginMap;
   pluginQueues: PluginQueueMap;
@@ -72,20 +64,14 @@ export type PluginRegistrarMachineEvent =
 type ParsedPlugin = ParsedPlugins["validPlugins"][number];
 
 /**
- * Registers a plugin's settings schema against its config prefix,
- * resolving the settings from the environment and the stored values.
+ * Registers a plugin's settings schema against its config prefix.
  *
  * @returns Whether the settings were registered successfully
  */
 function registerPluginSettings(
   plugin: ParsedPlugin,
-  {
-    installedPlugins,
-    pluginConfigPrefixMap,
-    pluginEnvironment,
-    pluginSettings,
-    storedPluginSettings,
-  }: ParsedPlugins,
+  pluginConfigPrefixMap: ParsedPlugins["pluginConfigPrefixMap"],
+  pluginSettings: PluginSettings,
 ) {
   const pluginName = plugin.name.description ?? "unknown";
 
@@ -98,35 +84,7 @@ function registerPluginSettings(
       );
     }
 
-    const packageName = installedPlugins.find(
-      (installedPlugin) => installedPlugin.plugin.name === plugin.name,
-    )?.packageName;
-
-    if (!packageName) {
-      throw new Error(
-        `No installed package found for plugin "${String(plugin.name)}"`,
-      );
-    }
-
-    const { value, ignoredStored } = resolveSettings({
-      schema: plugin.settingsSchema,
-      stored: storedPluginSettings.get(packageName) ?? {},
-      env: { ...pluginEnvironment.get(packageName) },
-    });
-
-    pluginSettings.set(
-      pluginConfigPrefix,
-      plugin.settingsSchema,
-      value,
-      getLeafPaths(plugin.settingsSchema).keys(),
-    );
-
-    for (const { leaf, message } of ignoredStored) {
-      logger.warn(
-        `Ignoring invalid stored setting "${leaf}" for plugin ${packageName}: ${message}`,
-        { namespace: packageName, key: leaf },
-      );
-    }
+    pluginSettings.set(pluginConfigPrefix, plugin.settingsSchema);
 
     return true;
   } catch (error) {
@@ -189,18 +147,18 @@ export const pluginRegistrarMachine = setup({
     output: {} as PluginRegistrarMachineOutput,
   },
   actions: {
-    raiseError: (_, error: Error) => {
-      throw error;
-    },
     registerPlugins: assign({
-      pendingPlugins: (_, parsedPlugins: ParsedPlugins) => {
-        const { validPlugins, pluginSettings } = parsedPlugins;
+      pendingPlugins: (
+        _,
+        { validPlugins, pluginConfigPrefixMap, pluginSettings }: ParsedPlugins,
+      ) => {
         const pluginMap = new Map<symbol, PendingPlugin>();
 
         for (const plugin of validPlugins) {
           const didRegisterSettings = registerPluginSettings(
             plugin,
-            parsedPlugins,
+            pluginConfigPrefixMap,
+            pluginSettings,
           );
 
           if (!didRegisterSettings) {
@@ -340,7 +298,6 @@ export const pluginRegistrarMachine = setup({
       validPlugins: new Map(),
       runningValidators: new Map(),
       rootRef: input.rootRef,
-      settingsService: input.settingsService,
       pluginQueues: new Map(),
       pluginWorkers: new Map(),
       publishableEvents: new Set(),
@@ -357,18 +314,11 @@ export const pluginRegistrarMachine = setup({
         pluginWorkers,
         publishableEvents,
         pluginSettings,
-        parsedPlugins,
       },
     }) => {
       if (!pluginSettings) {
         throw new Error(
           "PluginSettings is not available in the output context.",
-        );
-      }
-
-      if (!parsedPlugins) {
-        throw new Error(
-          "Parsed plugins are not available in the output context.",
         );
       }
 
@@ -379,8 +329,6 @@ export const pluginRegistrarMachine = setup({
         pluginWorkers,
         publishableEvents,
         pluginSettings,
-        installedPlugins: parsedPlugins.installedPlugins,
-        pluginEnvironment: parsedPlugins.pluginEnvironment,
       };
     },
     states: {
@@ -388,7 +336,6 @@ export const pluginRegistrarMachine = setup({
         invoke: {
           id: "collectPluginsForRegistration",
           src: "collectPluginsForRegistration",
-          input: ({ context: { settingsService } }) => ({ settingsService }),
           onDone: {
             target: "Validating",
             actions: [
@@ -447,23 +394,6 @@ export const pluginRegistrarMachine = setup({
               },
             ],
           },
-          onError: {
-            target: "Errored",
-            actions: [
-              {
-                type: "log",
-                params: ({ event: { error } }) => ({
-                  message: "Failed to collect plugins for registration.",
-                  level: "error",
-                  error,
-                }),
-              },
-              {
-                type: "raiseError",
-                params: ({ event }) => event.error as Error,
-              },
-            ],
-          },
         },
       },
       Validating: {
@@ -510,9 +440,6 @@ export const pluginRegistrarMachine = setup({
         },
       },
       Validated: {
-        type: "final",
-      },
-      Errored: {
         type: "final",
       },
     },

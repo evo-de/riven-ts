@@ -15,7 +15,7 @@ it.override(
     realdebridApiKey: "test-realdebrid-api-key",
     alldebridApiKey: "test-alldebrid-api-key",
     debridlinkApiKey: "test-debridlink-api-key",
-    storePriority: ["debridlink", "alldebrid", "realdebrid"],
+    storePriority: JSON.stringify(["debridlink", "alldebrid", "realdebrid"]),
   }),
 );
 

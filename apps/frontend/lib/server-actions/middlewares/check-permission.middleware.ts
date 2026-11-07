@@ -2,8 +2,6 @@ import {
   ItemPermission,
   SessionPermission,
   UserPermission,
-  LibraryPermission,
-  InstancePermission,
 } from "@repo/util-auth/access-control";
 import { atLeastOnePropertyRequired } from "@repo/util-plugin-sdk/validation";
 
@@ -18,8 +16,6 @@ export const PermissionMetadata = z.object({
       item: z.array(ItemPermission),
       user: z.array(UserPermission),
       session: z.array(SessionPermission),
-      library: z.array(LibraryPermission),
-      instance: z.array(InstancePermission),
     })
     .partial()
     .refine(atLeastOnePropertyRequired),

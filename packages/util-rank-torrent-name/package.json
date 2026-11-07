@@ -26,6 +26,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@repo/util-wiki-helpers": "workspace:^",
     "@viren070/parse-torrent-title": "catalog:",
     "es-toolkit": "catalog:",
     "fastest-levenshtein": "catalog:",
@@ -35,7 +36,6 @@
     "@repo/core-util-oxlint-config": "workspace:^",
     "@repo/core-util-typescript-config": "workspace:^",
     "@repo/core-util-vitest-config": "workspace:^",
-    "@repo/util-wiki-helpers": "workspace:^",
     "@types/node": "catalog:",
     "@typescript/native": "catalog:",
     "oxlint": "catalog:",

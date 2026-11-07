@@ -4,9 +4,8 @@ import { it as baseIt } from "#__tests__/test-context.ts";
 import { pluginRegistrarMachine } from "#state-machines/plugin-registrar/index.ts";
 
 export const it = baseIt
-  .extend("input", ({ services }) => ({
+  .extend("input", () => ({
     rootRef: createEmptyActor(),
-    settingsService: services.settingsService,
   }))
   .extend("machine", () => pluginRegistrarMachine)
   .extend("actor", ({ machine, input }, { onCleanup }) => {

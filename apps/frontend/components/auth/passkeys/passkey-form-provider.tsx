@@ -164,7 +164,11 @@ export function PasskeyFormProvider({ children }: PropsWithChildren) {
     ],
   );
 
-  return <PasskeyFormContext value={value}>{children}</PasskeyFormContext>;
+  return (
+    <PasskeyFormContext.Provider value={value}>
+      {children}
+    </PasskeyFormContext.Provider>
+  );
 }
 
 export function usePasskeyForm() {

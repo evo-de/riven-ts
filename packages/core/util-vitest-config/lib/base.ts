@@ -15,7 +15,7 @@ export const baseVitestConfig = defineConfig(() => {
         restoreMocks: true,
         coverage: {
           enabled: !isWatch,
-          exclude: [...ignorePatterns, "**/{__tests__,mocks}/**"],
+          exclude: [...ignorePatterns, "**/__tests__/**"],
         },
         setupFiles: [
           fileURLToPath(

@@ -1,4 +1,4 @@
-import type { LogLevel } from "@repo/util-plugin-sdk/dto/enums/log-level.enum";
+import type { LogLevel } from "#utilities/logger/log-levels.ts";
 
 interface CustomLogMeta {
   "riven.error.validation-message": string;

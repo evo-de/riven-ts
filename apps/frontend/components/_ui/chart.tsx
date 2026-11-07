@@ -14,10 +14,9 @@ import type {
 const THEMES = { light: "", dark: ".dark" } as const;
 
 const INITIAL_DIMENSION = { width: 320, height: 200 } as const;
-
 type TooltipNameType = number | string;
 
-type ChartConfig = Record<
+export type ChartConfig = Record<
   string,
   {
     label?: React.ReactNode;
@@ -391,7 +390,7 @@ export {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  // ChartLegend,
-  // ChartLegendContent,
-  // ChartStyle,
+  ChartLegend,
+  ChartLegendContent,
+  ChartStyle,
 };

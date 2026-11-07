@@ -1,9 +1,9 @@
-import type { LogLevel } from "@repo/util-plugin-sdk/dto/enums/log-level.enum";
+import type { LogLevel } from "#app/_types/__generated__/graphql.ts";
 
 export interface LogEntryRowProps {
   log: {
     timestamp?: string | null;
-    level: LogLevel;
+    level: Lowercase<LogLevel>;
     message?: string | null;
     source?: string | null;
   };
@@ -14,14 +14,15 @@ export interface LogEntryRowProps {
  * message.
  */
 export function LogEntryRow({ log }: LogEntryRowProps) {
-  const levelColors: Partial<Record<LogLevel, string>> = {
+  const levelColors: Partial<Record<Lowercase<LogLevel>, string>> = {
     error: "text-red-400",
     warn: "text-yellow-400",
     info: "text-green-400",
     debug: "text-blue-400",
   };
 
-  const levelClassName = levelColors[log.level] ?? "text-foreground";
+  const level = log.level.toLowerCase() as Lowercase<LogLevel>;
+  const levelClassName = levelColors[level] ?? "text-foreground";
 
   return (
     <div className="border-border/50 hover:bg-muted/20 border-b transition-colors last:border-b-0">
@@ -30,7 +31,7 @@ export function LogEntryRow({ log }: LogEntryRowProps) {
           {log.timestamp ?? ""}
         </span>
         <span className={`shrink-0 font-semibold uppercase ${levelClassName}`}>
-          {log.level}
+          {level}
         </span>
         <span className="text-muted-foreground/70 shrink-0">
           {log.source ?? ""}

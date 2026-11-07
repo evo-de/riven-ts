@@ -1,3 +1,5 @@
+import { json } from "@repo/util-plugin-sdk/validation";
+
 import z from "zod";
 
 import { NotificationScheme } from "./schemas/notification-scheme.schema.ts";
@@ -17,16 +19,15 @@ const NotificationURLScheme = z.union([
   ]),
 ]);
 
-export const NotificationsSettings = z
-  .object({
-    urls: z
+export const NotificationsSettings = z.object({
+  urls: json(
+    z
       .array(NotificationURLScheme)
       .min(1)
-      .pipe(z.tuple([NotificationURLScheme], NotificationURLScheme))
-      .describe(
-        "Notification service URLs (Apprise-style, e.g. discord://id/token, json://host/path)",
-      ),
-  })
-  .meta({ title: "Notifications" });
+      .pipe(z.tuple([NotificationURLScheme], NotificationURLScheme)),
+  ).describe(
+    "Notification service URLs (Apprise-style, e.g. discord://id/token, json://host/path)",
+  ),
+});
 
 export type NotificationsSettings = z.infer<typeof NotificationsSettings>;

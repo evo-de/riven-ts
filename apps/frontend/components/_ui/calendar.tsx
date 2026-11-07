@@ -125,23 +125,6 @@ function Calendar({
 }) {
   const defaultClassNames = getDefaultClassNames();
 
-  function getDefaultMonth() {
-    if (!props.mode) {
-      return;
-    }
-
-    switch (props.mode) {
-      case "multiple":
-        return props.selected?.[0];
-      case "range":
-        return props.selected ? props.selected.from : undefined;
-      case "single":
-        return props.selected ? props.selected : undefined;
-    }
-  }
-
-  const defaultMonth = getDefaultMonth();
-
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -153,7 +136,6 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       locale={locale}
-      {...(defaultMonth && { defaultMonth: defaultMonth })}
       formatters={{
         formatMonthDropdown: (date) =>
           date.toLocaleString(locale?.code, { month: "short" }),

@@ -10,56 +10,47 @@ import { deepFreeze } from "./deep-freeze.ts";
 
 import type { ReadonlyDeep } from "type-fest";
 
-/**
- * Extracts every `RIVEN_SETTING__<key>` entry from the environment,
- * removing it from the environment so it cannot leak elsewhere.
- */
-function extractCoreEnvironment(environment: NodeJS.ProcessEnv) {
-  const settingPattern = /^RIVEN_SETTING__(?<setting>.+)$/u;
+class Settings {
+  public readonly settings: ReadonlyDeep<RivenSettings>;
 
-  const rawSettings: Record<string, string> = {};
+  public constructor(environment: NodeJS.ProcessEnv) {
+    const settingPattern = /^RIVEN_SETTING__(?<setting>.+)$/u;
 
-  for (const [key, value] of Object.entries(environment)) {
-    const match = settingPattern.exec(key);
+    const rawSettings: Record<string, unknown> = {};
 
-    if (!match?.groups?.["setting"] || !value) {
-      continue;
+    for (const [key, value] of Object.entries(environment)) {
+      const match = settingPattern.exec(key);
+
+      if (!match?.groups?.["setting"] || !value) {
+        continue;
+      }
+
+      rawSettings[match.groups["setting"]] = value;
+
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete environment[key];
     }
 
-    rawSettings[match.groups["setting"]] = value;
+    this.settings = deepFreeze(RivenSettings.parse(rawSettings));
 
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete environment[key];
+    if (this.settings.printConfigurationOnStartup) {
+      console.debug("#################");
+      console.debug("Effective core configuration:");
+      console.debug(this.settings);
+      console.debug("#################");
+    }
+
+    setEnvironmentData("settings", rawSettings);
   }
-
-  setEnvironmentData("settings", rawSettings);
-
-  return rawSettings;
 }
 
-/**
- * All raw `RIVEN_SETTING__` entries, captured before they were removed from the environment.
- *
- * Includes both bootstrap and runtime settings keys.
- */
-export const coreEnvironment: Readonly<Record<string, string>> = Object.freeze(
-  isMainThread
-    ? extractCoreEnvironment(process.env)
-    : (getEnvironmentData("settings") as Record<string, string>),
-);
+function getWorkerSettings() {
+  const rawEnvironmentData = getEnvironmentData("settings");
+  const parsedEnvironmentData = RivenSettings.parse(rawEnvironmentData);
 
-function parseBootstrapSettings() {
-  const parsedSettings = deepFreeze(RivenSettings.parse(coreEnvironment));
-
-  if (isMainThread && parsedSettings.printConfigurationOnStartup) {
-    console.debug("#################");
-    console.debug("Effective core configuration:");
-    console.debug(parsedSettings);
-    console.debug("#################");
-  }
-
-  return parsedSettings;
+  return deepFreeze(parsedEnvironmentData);
 }
 
-/** The env-only bootstrap settings, available as soon as this module loads. */
-export const settings: ReadonlyDeep<RivenSettings> = parseBootstrapSettings();
+export const settings: ReadonlyDeep<RivenSettings> = isMainThread
+  ? new Settings(process.env).settings
+  : getWorkerSettings();

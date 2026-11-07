@@ -21,3 +21,5 @@ export const PasswordChangeFormSchema = z
     message: "New password must be different from current password.",
     path: ["newPassword"],
   });
+
+export type PasswordChangeFormValues = z.infer<typeof PasswordChangeFormSchema>;

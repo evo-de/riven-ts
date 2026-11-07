@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { SettingsPage as SettingsPageClient } from "./page.client";
 
 export default function SettingsPage() {
-  redirect("/settings/general");
+  return <SettingsPageClient />;
 }

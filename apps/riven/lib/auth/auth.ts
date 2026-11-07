@@ -18,10 +18,8 @@ import { Duration } from "luxon";
 import { frontendSettings } from "#utilities/frontend-settings.ts";
 import { withLogContext } from "#utilities/logger/log-context.ts";
 import { logger } from "#utilities/logger/logger.ts";
-import { getRuntimeSettings } from "#utilities/runtime-settings.ts";
 import { settings } from "#utilities/settings.ts";
 
-import { generateSecret } from "./generate-secret.ts";
 import { getGenericOAuthProviders } from "./oauth-utils.ts";
 import { defaultPlexOptions, plexOAuth } from "./plex-oauth.ts";
 
@@ -30,9 +28,7 @@ import type { Auth, BetterAuthOptions, LogLevel } from "better-auth";
 import type { AdapterFactory } from "better-auth/adapters";
 
 const transformLogLevel = (): Exclude<LogLevel, "success"> => {
-  const { logLevel } = getRuntimeSettings().general.logging;
-
-  switch (logLevel) {
+  switch (settings.logLevel) {
     case "silly":
     case "verbose": {
       return "debug";
@@ -44,21 +40,17 @@ const transformLogLevel = (): Exclude<LogLevel, "success"> => {
     case "info":
     case "warn":
     case "error": {
-      return logLevel;
+      return settings.logLevel;
     }
   }
 };
 
 export const authConfig = {
-  secret: frontendSettings.authSecret ?? generateSecret(),
+  secret: frontendSettings.authSecret,
   baseURL: `http://${settings.host}:${settings.port.toString()}`,
   logger: {
-    get disabled() {
-      return !getRuntimeSettings().general.logging.loggingEnabled;
-    },
-    get level() {
-      return transformLogLevel();
-    },
+    disabled: !settings.loggingEnabled,
+    level: transformLogLevel(),
     log(level, message, ...args: unknown[]) {
       withLogContext({ "riven.log.source": "auth" }, () => {
         logger[level](message, ...args);

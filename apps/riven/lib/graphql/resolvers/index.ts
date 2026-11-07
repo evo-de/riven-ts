@@ -1,5 +1,4 @@
 import { AuthResolver } from "./auth/auth.resolver.ts";
-import { CalendarResolver } from "./calendar/calendar.resolver.ts";
 import { EpisodeResolver } from "./episode.resolver.ts";
 import { FileSystemEntryResolver } from "./filesystem-entry/filesystem-entry.resolver.ts";
 import { IndexerDataResolver } from "./indexer-data.resolver.ts";
@@ -9,10 +8,9 @@ import { IndexerSeasonResolver } from "./indexer-season.resolver.ts";
 import { InstanceResolver } from "./instance/instance.resolver.ts";
 import { ItemRequestResolver } from "./item-request/item-request.resolver.ts";
 import { MediaEntryResolver } from "./media-entry.resolver.ts";
-import { MediaItemResolver } from "./media-item/media-item.resolver.ts";
+import { MediaItemResolver } from "./media-item.resolver.ts";
 import { MovieResolver } from "./movie.resolver.ts";
 import { SeasonResolver } from "./season.resolver.ts";
-import { SettingsResolver } from "./settings/settings.resolver.ts";
 import { ShareLogsResolver } from "./share-logs.resolver.ts";
 import { ShowResolver } from "./show.resolver.ts";
 import { VfsResolver } from "./vfs/vfs.resolver.ts";
@@ -36,6 +34,4 @@ export const resolvers = [
   IndexerEpisodeResolver,
   AuthResolver,
   InstanceResolver,
-  CalendarResolver,
-  SettingsResolver,
 ] as const satisfies Constructor<object>[];

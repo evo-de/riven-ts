@@ -1,30 +1,19 @@
-import type {
-  MediaItem,
-  MediaItemType,
-} from "#app/_types/__generated__/graphql.ts";
+import type { MediaItemType } from "@repo/util-plugin-sdk/dto/enums/media-item-type.enum";
 import type { DateTime } from "luxon";
-import type { ComponentType, HTMLAttributes } from "react";
+import type { UUID } from "node:crypto";
+import type { ComponentType } from "react";
 
-export type EntertainmentItemData = Pick<
-  MediaItem,
-  "id" | "primaryExternalId" | "type" | "releaseDate" | "state" | "fullTitle"
-> &
-  (
-    | {
-        type: "season";
-        number: number;
-      }
-    | {
-        type: "episode";
-        number: number;
-        seasonNumber: number;
-      }
-    | {
-        type: "movie" | "show";
-        number?: never;
-        seasonNumber?: never;
-      }
-  );
+export interface EntertainmentItemData {
+  itemId: UUID;
+  tvdbId: string;
+  tmdbId: string;
+  showTitle: string;
+  itemType: MediaItemType;
+  airedAt: string;
+  season?: number;
+  episode?: number;
+  lastState?: string;
+}
 
 export interface CalendarDay {
   date: DateTime;

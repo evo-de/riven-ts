@@ -59,7 +59,11 @@ export function NotificationsProvider({ children }: PropsWithChildren) {
     [],
   );
 
-  return <NotificationsContext value={value}>{children}</NotificationsContext>;
+  return (
+    <NotificationsContext.Provider value={value}>
+      {children}
+    </NotificationsContext.Provider>
+  );
 }
 
 export function useNotificationsContext() {

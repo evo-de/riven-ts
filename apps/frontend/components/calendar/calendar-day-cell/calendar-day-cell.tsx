@@ -23,20 +23,18 @@ function getDayNumberClassName(isToday: boolean, isCurrentMonth: boolean) {
  * releases, with a "+N more" overflow.
  */
 export function CalendarDayCell({ day, isToday }: CalendarDayCellProps) {
-  const { date, isCurrentMonth, items } = day;
-
   return (
     <div
       aria-current={isToday ? "date" : undefined}
-      aria-label={date.toLocaleString(DateTime.DATE_FULL)}
+      aria-label={day.date.toLocaleString(DateTime.DATE_FULL)}
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
       role="gridcell"
       className={cn(
         "group/day min-h-32 rounded-md border p-2 transition-colors",
-        isCurrentMonth
+        day.isCurrentMonth
           ? "bg-background/50 border-border/70 hover:border-primary/30 hover:bg-accent/30"
           : "bg-muted/10 border-border/30 text-muted-foreground/60",
-        items.length > 0 && isCurrentMonth && "bg-card/80",
+        day.items.length > 0 && day.isCurrentMonth && "bg-card/80",
         isToday && "border-primary/70 bg-primary/5",
       )}
     >
@@ -44,14 +42,14 @@ export function CalendarDayCell({ day, isToday }: CalendarDayCellProps) {
         <div
           className={cn(
             "flex size-7 items-center justify-center rounded-md text-sm font-semibold",
-            getDayNumberClassName(isToday, isCurrentMonth),
+            getDayNumberClassName(isToday, day.isCurrentMonth),
           )}
         >
-          {date.day}
+          {day.date.day}
         </div>
-        {items.length > 0 && (
+        {day.items.length > 0 && (
           <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
-            {items.length}
+            {day.items.length}
           </span>
         )}
       </div>

@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveLocale } from "./resolve-locale.ts";
-
-const defaultLocale = "en-US";
+import { defaultLocale, resolveLocale } from "./resolve-locale.ts";
 
 describe("fallback to the default locale", () => {
   it.for([
