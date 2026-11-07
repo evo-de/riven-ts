@@ -1,9 +1,0 @@
-{
-  "$schema": "https://turborepo.dev/schema.json",
-  "extends": ["//"],
-  "tags": ["group:silo", "type:plugin"],
-  "tasks": {
-    "build": {},
-    "codegen:config-docs": {}
-  }
-}
