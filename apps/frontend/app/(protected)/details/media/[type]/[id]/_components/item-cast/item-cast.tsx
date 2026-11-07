@@ -1,17 +1,58 @@
+import { cn } from "cn";
 import { cacheLife } from "next/cache";
+import { headers } from "next/headers";
+import { Suspense } from "react";
 
-import { CastSection } from "#app/(protected)/details/media/_components/cast-section.tsx";
+import { fly } from "#components/_animations/fly.ts";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "#components/_ui/carousel.tsx";
+import { ErrorFallback } from "#components/error-fallback/error-fallback.tsx";
+import { ListCarouselSkeleton } from "#components/list-carousel/list-carousel-skeleton.tsx";
+import { SectionHeading } from "#components/media/section-heading/section-heading.tsx";
+import { PortraitCard } from "#components/portrait-card/portrait-card.tsx";
 import { query } from "#lib/graphql/client.ts";
+import { resolveLocale } from "#lib/utils/resolve-locale.ts";
 
 import { GET_ITEM_CAST } from "./_queries/get-item-cast.query";
 
-import type { TopLevelMediaItemType } from "#app/_types/__generated__/graphql.ts";
+import type {
+  CastMember,
+  TopLevelMediaItemType,
+} from "#app/_types/__generated__/graphql.ts";
 
-async function fetchItemCast(
-  id: string,
-  type: TopLevelMediaItemType,
-  locale: string,
-) {
+interface CastMemberCarouselProps {
+  cast: CastMember[];
+}
+
+function CastMemberCarousel({ cast }: CastMemberCarouselProps) {
+  return (
+    <Carousel opts={{ dragFree: true, slidesToScroll: "auto" }}>
+      <CarouselContent className="-ml-3">
+        {cast.map((member) => (
+          <CarouselItem key={member.id} className="basis-auto pl-3">
+            <PortraitCard
+              title={member.name}
+              subtitle={member.character}
+              image={member.profileUrl}
+              className="w-32 md:w-36 lg:w-40"
+            />
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+    </Carousel>
+  );
+}
+
+interface ItemCastContentProps {
+  id: string;
+  type: TopLevelMediaItemType;
+  locale: string;
+}
+
+async function ItemCastContent({ id, type, locale }: ItemCastContentProps) {
   "use cache";
 
   cacheLife("days");
@@ -25,7 +66,24 @@ async function fetchItemCast(
     },
   });
 
-  return data?.tmdbItem.cast ?? null;
+  if (!data?.tmdbItem.cast) {
+    return null;
+  }
+
+  return <CastMemberCarousel cast={data.tmdbItem.cast} />;
+}
+
+interface ItemCastLoaderProps {
+  id: string;
+  type: TopLevelMediaItemType;
+}
+
+async function ItemCastLoader({ id, type }: ItemCastLoaderProps) {
+  const headersList = await headers();
+  const acceptLanguage = headersList.get("accept-language");
+  const locale = resolveLocale(acceptLanguage);
+
+  return <ItemCastContent id={id} type={type} locale={locale} />;
 }
 
 interface ItemCastProps {
@@ -35,9 +93,15 @@ interface ItemCastProps {
 
 export function ItemCast({ id, type }: ItemCastProps) {
   return (
-    <CastSection
-      className="delay-550"
-      fetchCast={async (locale) => fetchItemCast(id, type, locale)}
-    />
+    <section
+      className={cn("mt-8 md:mt-12 animation-duration-400 delay-550", fly)}
+    >
+      <SectionHeading title="Cast" />
+      <ErrorFallback message="Unable to load cast information">
+        <Suspense fallback={<ListCarouselSkeleton />}>
+          <ItemCastLoader id={id} type={type} />
+        </Suspense>
+      </ErrorFallback>
+    </section>
   );
 }

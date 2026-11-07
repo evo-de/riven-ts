@@ -47,7 +47,7 @@ export class MediaItemStateChangeSubscriber implements EventSubscriber<MediaItem
   }
 
   public afterUpdate({ em, entity, changeSet }: EventArgs<MediaItem>) {
-    if (!changeSet?.originalEntity?.state || !changeSet.payload.state) {
+    if (!changeSet?.originalEntity || !changeSet.payload.state) {
       return;
     }
 
