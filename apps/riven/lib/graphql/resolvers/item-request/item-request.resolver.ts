@@ -1,12 +1,9 @@
 import { ItemRequest } from "@repo/util-plugin-sdk/dto/entities";
-import { ItemRequestAction } from "@repo/util-plugin-sdk/dto/enums/item-request-action.enum";
-import { ItemRequestState } from "@repo/util-plugin-sdk/dto/enums/item-request-state.enum";
 
 import {
   Arg,
   Args,
   Ctx,
-  FieldResolver,
   ID,
   Mutation,
   Query,
@@ -132,44 +129,5 @@ export class ItemRequestResolver {
 
       throw error;
     }
-  }
-
-  @FieldResolver(() => [ItemRequestAction.enum])
-  public async availableActions(
-    @Root() itemRequest: ItemRequest,
-  ): Promise<ItemRequestAction[]> {
-    const actions = new Set<ItemRequestAction>(["reset"]);
-    const primaryMediaItem = await itemRequest.primaryMediaItem();
-
-    if (primaryMediaItem?.state === "failed") {
-      actions.add("retry");
-    }
-
-    const pausableStates = ItemRequestState.exclude([
-      "failed",
-      "completed",
-      "paused",
-      "unreleased",
-    ]);
-
-    if (pausableStates.safeParse(itemRequest.state).success) {
-      actions.add("pause");
-    }
-
-    if (itemRequest.state === "paused") {
-      actions.add("resume");
-    }
-
-    if (itemRequest.type === "show" && itemRequest.isPartialRequest) {
-      actions.add("request_more");
-    }
-
-    if (itemRequest.type === "movie" && itemRequest.state === "completed") {
-      actions.add("blacklist_active_stream");
-    }
-
-    actions.add("delete");
-
-    return [...actions];
   }
 }

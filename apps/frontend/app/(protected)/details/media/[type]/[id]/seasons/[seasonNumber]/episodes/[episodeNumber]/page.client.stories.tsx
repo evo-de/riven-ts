@@ -2,6 +2,7 @@ import { HttpResponse } from "msw";
 import { expect, waitFor } from "storybook/test";
 
 import preview from "#.storybook/preview.tsx";
+import { GET_ITEM_SEASONS } from "#app/(protected)/details/media/[type]/[id]/_components/item-seasons/_queries/get-item-seasons.query.ts";
 import { api } from "#mocks/graphql.ts";
 import { createSeasonStateHandlers } from "#mocks/handlers/season-state.handler.ts";
 
@@ -35,6 +36,18 @@ const meta = preview.meta({
   beforeEach({ args, msw }) {
     msw.use(
       ...createSeasonStateHandlers(null),
+      api.query(GET_ITEM_SEASONS, () =>
+        HttpResponse.json({
+          data: {
+            tmdbItem: {
+              __typename: "TmdbIndexerData",
+              id: show.id,
+              type: show.type,
+              seasons: [season],
+            },
+          },
+        }),
+      ),
       api.query(GET_EPISODE_CAST, ({ variables }) =>
         HttpResponse.json({
           data: {
@@ -60,13 +73,18 @@ const meta = preview.meta({
       ),
     );
   },
+  async play({ canvas }) {
+    // The page suspends until all of its server components (e.g. the item action toolbar) have loaded,
+    // so wait for it before testing anything that loads after it
+    await canvas.findByRole("heading", { level: 1 });
+  },
 });
 
 export const Unrequested = meta.story();
 
 Unrequested.test("Shows the episode's details", async ({ canvas }) => {
   await expect(
-    canvas.getByRole("heading", {
+    await canvas.findByRole("heading", {
       level: 1,
       name: "Some Mysteries Are Better Left Unsolved",
     }),
@@ -86,10 +104,9 @@ Unrequested.test("Shows the episode's cast", async ({ canvas }) => {
 });
 
 Unrequested.test("Links back to the show and season", async ({ canvas }) => {
-  await expect(canvas.getByRole("link", { name: "Arcane" })).toHaveAttribute(
-    "href",
-    "/details/media/show/371028",
-  );
+  await expect(
+    await canvas.findByRole("link", { name: "Arcane" }),
+  ).toHaveAttribute("href", "/details/media/show/371028");
 
   await expect(canvas.getByRole("link", { name: "Season 1" })).toHaveAttribute(
     "href",
@@ -101,7 +118,7 @@ Unrequested.test(
   "Links to the previous and next episodes",
   async ({ canvas }) => {
     await expect(
-      canvas.getByRole("link", { name: /welcome to the playground/iu }),
+      await canvas.findByRole("link", { name: /welcome to the playground/iu }),
     ).toHaveAttribute(
       "href",
       "/details/media/show/371028/seasons/1/episodes/1",
@@ -125,7 +142,9 @@ export const FirstEpisode = meta.story({
 });
 
 FirstEpisode.test("Only links to the next episode", async ({ canvas }) => {
-  const navigation = canvas.getByRole("navigation", { name: "Episodes" });
+  const navigation = await canvas.findByRole("navigation", {
+    name: "Episodes",
+  });
 
   await expect(navigation.querySelectorAll("a")).toHaveLength(1);
 

@@ -1,6 +1,9 @@
+import { HttpResponse } from "msw";
 import { expect, waitFor, within } from "storybook/test";
 
 import preview from "#.storybook/preview.tsx";
+import { GET_ITEM_SEASONS } from "#app/(protected)/details/media/[type]/[id]/_components/item-seasons/_queries/get-item-seasons.query.ts";
+import { api } from "#mocks/graphql.ts";
 import { createSeasonStateHandlers } from "#mocks/handlers/season-state.handler.ts";
 
 import { SeasonDetailsPage } from "./page.client.tsx";
@@ -16,7 +19,26 @@ const meta = preview.meta({
     season,
   },
   beforeEach({ msw }) {
-    msw.use(...createSeasonStateHandlers(null));
+    msw.use(
+      ...createSeasonStateHandlers(null),
+      api.query(GET_ITEM_SEASONS, () =>
+        HttpResponse.json({
+          data: {
+            tmdbItem: {
+              __typename: "TmdbIndexerData",
+              id: show.id,
+              type: show.type,
+              seasons: [season],
+            },
+          },
+        }),
+      ),
+    );
+  },
+  async play({ canvas }) {
+    // The page suspends until all of its server components (e.g. the item action toolbar) have loaded,
+    // so wait for it before testing anything that loads after it
+    await canvas.findByRole("heading", { level: 1 });
   },
 });
 
@@ -24,7 +46,7 @@ export const Unrequested = meta.story();
 
 Unrequested.test("Shows the season and its episodes", async ({ canvas }) => {
   await expect(
-    canvas.getByRole("heading", { level: 1, name: "Season 1" }),
+    await canvas.findByRole("heading", { level: 1, name: "Season 1" }),
   ).toBeInTheDocument();
 
   await expect(canvas.getByText("9 episodes")).toBeInTheDocument();
@@ -36,10 +58,9 @@ Unrequested.test("Shows the season and its episodes", async ({ canvas }) => {
 });
 
 Unrequested.test("Links back to the show", async ({ canvas }) => {
-  await expect(canvas.getByRole("link", { name: "Arcane" })).toHaveAttribute(
-    "href",
-    "/details/media/show/371028",
-  );
+  await expect(
+    await canvas.findByRole("link", { name: "Arcane" }),
+  ).toHaveAttribute("href", "/details/media/show/371028");
 });
 
 Unrequested.test("Links each episode to its page", async ({ canvas }) => {
